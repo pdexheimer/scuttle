@@ -4,3 +4,4 @@ data/
 .vscode
 *.h5ad
 __pycache__/
+dist/
