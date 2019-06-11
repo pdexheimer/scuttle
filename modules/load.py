@@ -3,6 +3,7 @@ This module is responsible for loading the h5ad - either by loading it directly,
 it from other sources (ie, 10x output)
 """
 
+import logging
 import os.path
 import sys
 import scanpy as sc
@@ -27,10 +28,10 @@ def load_data(args):
     data = None
     if _import_requested(args):
         if os.path.exists(args.file) and not args.overwrite:
-            print('[ERROR] Attempting to overwrite an existing file with new data.  If you really want to do this, use --overwrite', file=sys.stderr)
+            logging.critical('Attempting to overwrite an existing file with new data.  If you really want to do this, use --overwrite', file=sys.stderr)
             exit(1)
         if args.save_as is not None:
-            print('[WARNING] --save-as is incompatible with an import method.  Simply use the default FILE argument')
+            logging.warning('--save-as is incompatible with an import method.  Simply use the default FILE argument')
             args.save_as = None
         if args.cellranger != None:
             if os.path.isfile(args.cellranger):
@@ -39,7 +40,7 @@ def load_data(args):
                 data = sc.read_10x_mtx(args.cellranger)
     else:
         if not os.path.exists(args.file):
-            print(f"[ERROR] Can't open {args.file}, file doesn't exist", file=sys.stderr)
+            logging.critical(f"[Can't open {args.file}, file doesn't exist", file=sys.stderr)
             exit(1)
         data = sc.read_h5ad(args.file)
     return data

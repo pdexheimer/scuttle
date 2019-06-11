@@ -8,7 +8,7 @@ import multiprocessing
 import pandas as pd
 import numpy as np
 import sys
-import count_bc
+from . import count_bc
 
 def add_arguments(arg_parser):
     viral_tag_group = arg_parser.add_argument_group('Cellecta Viral Tag Processing')

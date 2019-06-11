@@ -2,6 +2,5 @@
 env/
 data/
 .vscode
-old/
 *.h5ad
-__pycache__
+__pycache__/

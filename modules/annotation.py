@@ -2,6 +2,7 @@
 Manage cell/gene annotations - add from external sources, etc
 """
 
+import logging
 import pandas as pd
 
 def add_arguments(arg_parser):
@@ -32,6 +33,6 @@ def add_cell_annotation(data, filename, header_absent, annot_name, cell_column, 
 def drop_cell_annotation(data, annotations):
     for annot_name in annotations:
         if annot_name not in data.obs_keys():
-            print(f"Annotation '{annot_name}' not present in cell annotations (obs), ignoring")
+            logging.warning(f"Annotation '{annot_name}' not present in cell annotations (obs), ignoring")
             continue
         data.obs.pop(annot_name)
