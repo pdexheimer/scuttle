@@ -1,7 +1,16 @@
 .DS_Store
-env/
-data/
 .vscode
-*.h5ad
+
+#python stuff (virtual environment, etc)
+env/
 __pycache__/
+
+#devel data
+data/
+*.h5ad
+
+#setuptools artifacts
 dist/
+build/
+.eggs
+*.egg-info

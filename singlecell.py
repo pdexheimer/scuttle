@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from argparse import ArgumentParser
-from modules import annotation, cellecta, load, summarize
+from modules import annotation, cellecta, file, summarize
 import logging.config
 
 logConfig = {
@@ -26,11 +26,14 @@ logConfig = {
 
 def parse_arguments():
     parser = ArgumentParser()
-    load.add_arguments(parser)
+    file.add_arguments(parser)
     cellecta.add_arguments(parser)
     annotation.add_arguments(parser)
     summarize.add_arguments(parser)
     return parser.parse_args()
+
+def validate_arguments(args):
+    file.validate_args(args)
 
 def process_data(data, args):
     annotation.process(data, args)
@@ -40,6 +43,7 @@ def process_data(data, args):
 if __name__ == '__main__':
     logging.config.dictConfig(logConfig)
     args = parse_arguments()
-    data = load.load_data(args)
+    validate_arguments(args)
+    data = file.load_data(args)
     process_data(data, args)
-    load.save_data(data, args)
+    file.save_data(data, args)
