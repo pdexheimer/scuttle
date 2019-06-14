@@ -18,6 +18,8 @@ def add_arguments(arg_parser):
                         help='Format to save the output (default: %(default)s)')
     io_group.add_argument('--no-write', action='store_true',
                         help='If specified, no output will be written')
+    io_group.add_argument('--no-compresss', dest='compress', action='store_false',
+                        help='If specified, output will not be compressed')
     io_group.add_argument('file', nargs='?', help='File/directory containing the input data')
     io_group.add_argument('output_file', nargs='?',
                         help='Filename to save results to.  If the input format is h5ad and this is not specified, will overwrite the input file')
@@ -79,6 +81,6 @@ def save_data(data, args):
     if args.no_write:
         return
     if args.output_format == 'h5ad':
-        data.write(args.output_file)
+        data.write(args.output_file, compression='gzip' if args.compress else None)
     elif args.output_format == 'loom':
         data.write_loom(args.output_file)

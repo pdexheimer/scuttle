@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from argparse import ArgumentParser
-from modules import annotation, cellecta, file, summarize
+from modules import annotation, cellecta, file, summarize, filter
 import logging.config
 
 logConfig = {
@@ -29,6 +29,7 @@ def parse_arguments():
     file.add_arguments(parser)
     cellecta.add_arguments(parser)
     annotation.add_arguments(parser)
+    filter.add_arguments(parser)
     summarize.add_arguments(parser)
     return parser.parse_args()
 
@@ -38,6 +39,7 @@ def validate_arguments(args):
 def process_data(data, args):
     annotation.process(data, args)
     cellecta.process(data, args)
+    filter.process(data, args)
     summarize.process(data, args)
 
 if __name__ == '__main__':
