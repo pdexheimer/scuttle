@@ -42,10 +42,13 @@ def process_data(data, args):
     filter.process(data, args)
     summarize.process(data, args)
 
-if __name__ == '__main__':
+def main():
     logging.config.dictConfig(logConfig)
     args = parse_arguments()
     validate_arguments(args)
     data = file.load_data(args)
     process_data(data, args)
     file.save_data(data, args)
+
+if __name__ == '__main__':
+    main()
