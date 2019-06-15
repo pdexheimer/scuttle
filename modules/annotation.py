@@ -34,13 +34,11 @@ def add_arguments(arg_parser):
 
 def validate_args(args):
     cell_annotations = ( args.cell_annot_file is not None,
-                         args.cell_annotation is not None,
-                         args.cell_id_column is not None,
-                         args.cell_annot_column is not None)
+                         args.cell_annotation is not None)
     if any(cell_annotations) and not all(cell_annotations):
         logging.critical("Cell annotations have only been partially specified (see --cell-annot-file, --cell-annotation, --cell-id-column, and --cell-annot-column)")
         exit(1)
-    args.cell_annotation = args.cell_annotation.split(',')
+    args.cell_annotation = args.cell_annotation.split(',') if args.cell_annotation else ['none']
     args.cell_annot_column = [ int(x) for x in args.cell_annot_column.split(',') ]
     if len(args.cell_annotation) != len(args.cell_annot_column):
         logging.critical("Length of --cell-annotation must match --cell-annot-column")
