@@ -1,18 +1,31 @@
+# scuttle - manage and manipulate sc-rna data files
+# Copyright (C) 2019 Phillip Dexheimer
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import Levenshtein
-import sys
 import numpy as np
 import scipy
 
 class TagCorpus:
     def __init__(self, filename):
-        #self._ids = []
         self._seqs = []
         self._id_lookup = {}
         if filename != None:
             with open(filename, 'r') as f:
                 for line in f:
                     bc_id, seq = line.rstrip().split('\t')
-                    #self._ids.append(bc_id)
                     self._seqs.append(seq)
                     self._id_lookup[seq] = bc_id
         self._ngrams = np.zeros((len(self._seqs), 64), dtype=int)
@@ -40,69 +53,21 @@ class TagCorpus:
         distances = scipy.spatial.distance.cdist(ngram, self._ngrams, 'cosine')
         return self._seqs[distances.argmax()]
 
-
-class TagCorpusOld:
-    def __init__(self, filename):
-        self._id_lookup = {}
-        self._by_prefix = { i: { j: {} for j in 'ACGTN' } for i in 'ACGTN' }
-        if filename != None:
-            with open(filename, 'r') as f:
-                for line in f:
-                    bc_id, seq = line.rstrip().split('\t')
-                    self._id_lookup[seq] = bc_id
-                    self._by_prefix[seq[0]][seq[1]][seq] = bc_id
-
-    def __contains__(self, item):
-        return item in self._id_lookup
-
-    def __getitem__(self, key):
-        return self._id_lookup[key]
-    
-    def items_with_prefix(self, prefix):
-        return self._by_prefix[prefix[0]][prefix[1]].items()
-
-    def items(self):
-        return self._id_lookup.items()
-
-def _load_tags(filename):
-    if filename == None:
-        return None
-    tags = {}
-    with open(filename, 'r') as f:
-        for line in f:
-            bc_id, seq = line.rstrip().split('\t')
-            tags[seq] = bc_id
-    return tags
-
 def initialize_barcodes(bc14_filename, bc30_filename):
     global bc14_tags, bc30_tags
-    #bc14_tags = _load_tags(bc14_filename)
-    #bc30_tags = _load_tags(bc30_filename)
     bc14_tags = TagCorpus(bc14_filename)
     bc30_tags = TagCorpus(bc30_filename)
 
-def _error_correct(sequence, tags):
-    # No correction possible
-    if tags == None:
-        return sequence
-
+def error_correct(sequence, tags):
     # Perfect match
     if sequence in tags:
         return tags[sequence]
-
-    bestmatch = tags.nearest_match(sequence)
-    if Levenshtein.hamming(sequence, bestmatch) < 3:
-        return tags[bestmatch]
-
-    # for expected_seq, name in tags.items_with_prefix(sequence[:2]):
-    #     if Levenshtein.hamming(sequence, expected_seq) < 3:
-    #         return name
-
-    # # Error correct - it's faster to iterate through all possible tags and check the distance
-    # # than it is to generate all possible variations of this sequence
-    # for expected_seq, name in tags.items():
-    #     if Levenshtein.hamming(sequence, expected_seq) < 3:
-    #         return name
+    
+    # Error correct - it's faster to iterate through all possible tags and check the distance
+    # than it is to generate all possible variations of this sequence
+    for expected_seq, name in tags.items():
+        if Levenshtein.hamming(sequence, expected_seq) < 3:
+            return name
     
     # Error correct failed, no idea what this sequence should be
     return None
@@ -110,10 +75,10 @@ def _error_correct(sequence, tags):
 def count(barcodes):
     counts = {}
     for (cell, umi, fourteen, thirty) in barcodes:
-        bc14_id = _error_correct(fourteen, bc14_tags)
+        bc14_id = error_correct(fourteen, bc14_tags)
         if bc14_id == None:
             continue
-        bc30_id = _error_correct(thirty, bc30_tags)
+        bc30_id = error_correct(thirty, bc30_tags)
         if bc30_id == None:
             continue
         bc = f"{bc14_id}:{bc30_id}"
@@ -123,5 +88,4 @@ def count(barcodes):
         counts.setdefault(cell, {})
         counts[cell].setdefault(bc, 0)
         counts[cell][bc] += 1
-    #print('*', end='', file=sys.stderr, flush=True)
     return counts

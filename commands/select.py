@@ -1,25 +1,45 @@
+# scuttle - manage and manipulate sc-rna data files
+# Copyright (C) 2019 Phillip Dexheimer
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import ast
+from . import command as cmd
 import logging
 import numpy as np
 import pandas as pd
 import sys
 
-def add_arguments(arg_parser):
-    filter_group = arg_parser.add_argument_group('Filter')
-    filter_group.add_argument('--select-cells', '-C', metavar='EXPR',
-                                help='Select cells that meet the given criteria')
-    filter_group.add_argument('--select-genes', '-G', metavar='EXPR',
-                                help='Select genes that meet the given criteria')
+def commands():
+    select_cmd = cmd.CommandDescription('select')
+    cell_cmd = cmd.CommandDescription('cells')
+    cell_cmd.add_argument('expression')
+    gene_cmd = cmd.CommandDescription('genes')
+    gene_cmd.add_argument('expression')
+    select_cmd.add_subcommand(cell_cmd)
+    select_cmd.add_subcommand(gene_cmd)
+    return [ cmd.CommandTemplate(select_cmd, process) ]
 
-def process(data, args):
-    if args.select_cells:
-        tree = ast.parse(args.select_cells, mode='eval')
+def process(args, data):
+    if args.subcommand == 'cells':
+        tree = ast.parse(args.expression, mode='eval')
         cell_subset = EvaluateFilter(data, 'cell').visit(tree)
         s = np.sum(~cell_subset)
         logging.info(f'Removed {s} cells')
         data._inplace_subset_obs(cell_subset)
-    if args.select_genes:
-        tree = ast.parse(args.select_genes, mode='eval')
+    if args.subcommand == 'genes':
+        tree = ast.parse(args.expression, mode='eval')
         gene_subset = EvaluateFilter(data, 'gene').visit(tree)
         s = np.sum(~gene_subset)
         logging.info(f'Removed {s} genes')
