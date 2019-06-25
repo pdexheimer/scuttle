@@ -18,23 +18,21 @@
 Summarizes the annotations attached to the h5ad
 """
 
+from . import command as cmd
 import numpy as np
 import pandas as pd
 from scipy.sparse import issparse
 
-def add_arguments(arg_parser):
-    arg_parser.add_argument('--summary', choices=['none', 'brief', 'detailed'], default='brief',
-                            help='Summarize the annotations before saving (Default: %(default)s)')
-    arg_parser.add_argument('--no-summary', '-q', dest='summary', action='store_const', const='none',
-                            help='Synonym for --summary=none')
-    arg_parser.add_argument('--details', dest='summary', action='store_const', const='detailed',
-                            help='Synonym for --summary=detailed')
+def commands():
+    describe_cmd = cmd.CommandDescription('describe')
+    describe_cmd.add_option('--verbose', '-v', destvar='verbose', action='store_true')
+    return [ cmd.CommandTemplate(describe_cmd, process) ]
 
-def process(data, args):
-    if args.summary == 'brief':
-        _brief_summary(data)
-    elif args.summary == 'detailed':
+def process(args, data):
+    if args.verbose:
         _full_summary(data)
+    else:
+        _brief_summary(data)
 
 def _brief_summary(data):
     print(f"Number of cells: {data.n_obs}")
@@ -100,7 +98,7 @@ def _summarize_pandas_categorical(name, collection):
     result = f"""{collection.name} [{collection.dtype}]: {collection.count():d} non-null values
   {len(summary):d} distinct values, most frequent:"""
     for i in range(min(5, len(summary))):
-        result += f"\n    {summary.index[i]}: {summary[i]:g}"
+        result += f"\n    {summary.index[i]}: {summary.iloc[i]:g}"
     return result
 
 def _summarize_pandas_numerical(name, collection):
