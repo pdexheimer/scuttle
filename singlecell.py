@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from argparse import ArgumentParser
-from commands import command as cmd, select, describe, annotate
+from commands import command as cmd, select, describe, annotate, help
 import functools
 import logging.config
 import os
@@ -96,6 +96,10 @@ class SingleCellIO:
             return sc.read_10x_mtx(filename)
 
     def validate_args(args):
+        if args.input is None:
+            logging.critical("Input file must be specified with -i")
+            exit(1)
+
         if args.input_format == 'h5ad':
             SingleCellIO._validate_h5ad_filename(args.input, 'input')
         elif args.input_format == '10x':
@@ -105,7 +109,7 @@ class SingleCellIO:
         
         if not os.path.exists(args.input):
             logging.critical(f"Input file {args.input} does not exist.  Aborting")
-            sys.exit(1)
+            exit(1)
                 
         if args.write:
             if not args.output and args.input_format == 'h5ad':
@@ -124,23 +128,24 @@ class SingleCellIO:
     def _validate_h5ad_filename(filename, input_or_output):
         if not filename.endswith('.h5ad'):
             logging.critical(f"{input_or_output} file '{filename}' does not have an .h5ad extension.  Change the expected format with --{input_or_output}-format")
-            sys.exit(1)
+            exit(1)
 
     def _validate_loom_filename(filename, input_or_output):
         if not filename.endswith('.loom'):
             logging.critical(f"{input_or_output} file '{filename}' does not have a .loom extension.  Change the expected format with --{input_or_output}-format")
-            sys.exit(1)
+            exit(1)
 
     def _validate_10x_filename(filename, input_or_output):
         if not (os.path.isdir(filename) or filename.endswith('.h5')):
             logging.critical(f"{input_or_output} file '{filename}' does not look like a 10x file. It should either be an .h5 file or the directory containing the .mtx file. Change the expected format with --{input_or_output}-format")
-            sys.exit(1)
+            exit(1)
 
 def parse_arguments(scio):
     command_templates = []
     command_templates.extend(select.commands())
     command_templates.extend(describe.commands())
     command_templates.extend(annotate.commands())
+    command_templates.extend(help.commands())
 
     return cmd.parse(command_templates, 
                     cmd.GlobalTemplate(global_options, scio.process_args, SingleCellIO.validate_args))
@@ -150,15 +155,21 @@ def main():
     scio = SingleCellIO()
     global_args, command_list = parse_arguments(scio)
 
-    global_args.validate_args()
-    for c in command_list:
-        c.validate_args()
+    if len(command_list) == 0:
+        command_list.append(cmd.Command(cmd.Namespace(), help.process, cmd.CommandTemplate.no_validate))
+    
+    if len(command_list) == 1 and command_list[0].dispatch == help.process:
+        command_list[0].execute(None)
+    else:
+        global_args.validate_args()
+        for c in command_list:
+            c.validate_args()
 
-    global_args.execute()
-    data = scio.loader(scio.input_filename)
-    for c in command_list:
-        c.execute(data)
-    scio.writer(data, scio.output_filename)
+        global_args.execute()
+        data = scio.loader(scio.input_filename)
+        for c in command_list:
+            c.execute(data)
+        scio.writer(data, scio.output_filename)
 
 if __name__ == '__main__':
     main()
