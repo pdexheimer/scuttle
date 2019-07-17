@@ -101,7 +101,7 @@ def assign_tags(data, fastqs, bc14_file, bc30_file, cell_suffix, n_proc=-1):
             doublets[f'{cell}{cell_suffix}'] = 1
             doublet_count += 1
         else:
-            tags[f'{cell}{cell_counts}'] = list(cell_counts[cell])[0]
+            tags[f'{cell}{cell_suffix}'] = list(cell_counts[cell])[0]
             conf_count += 1
     data.obs['doublet'] = doublets
     data.obs['tags'] = tags
