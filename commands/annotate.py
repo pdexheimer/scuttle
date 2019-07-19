@@ -20,7 +20,9 @@ Manage cell/gene annotations - add from external sources, etc
 
 from . import command as cmd
 from .cellecta import assign_tags
+import history
 import logging
+import os.path
 import pandas as pd
 
 def commands():
@@ -71,12 +73,21 @@ def validate_args(args):
 def process(args, data):
     if args.subcommand == 'cellecta':
         assign_tags.assign_tags(data, args.fastqs, args.bc14, args.bc30, args.id_suffix, args.procs)
+        history.add_history_entry(data, args, 
+            f"Processed Cellecta tags from FASTQs {os.path.abspath(args.fastqs[0])} and {os.path.abspath(args.fastq[1])}")
     else:
         if args.drop:
-            drop_annotation(data, args.subcommand, args.drop)
+            description = drop_annotation(data, args.subcommand, args.drop)
         if args.annot_file is not None:
             add_annotation(data, args.subcommand, args.annot_file, args.header, args.annotation, 
                                 args.id_column, args.annot_column, args.id_suffix)
+            if args.subcommand == 'cells':
+                target = 'cell'
+            else:
+                target = 'gene'
+            description = f"Added {target} annotation(s) {args.annotation} from file {os.path.abspath(args.annot_file)}"
+        if description is not None:
+            history.add_history_entry(data, args, description)
 
 def add_annotation(data, target, filename, header_present, annot_name, id_column, annotation_column, id_suffix=''):
     header_row = 'infer' if header_present else None
@@ -89,20 +100,22 @@ def add_annotation(data, target, filename, header_present, annot_name, id_column
         else:
             data.var[name] = annot[col]
 
-def drop_annotation(data, target, annotations):
+def drop_annotation(data, target, annotation):
+    "Returns a description of the operation, or None in case of error"
     if target == 'cells':
-        _drop_cell_annotation(data, annotations)
-    else:
-        _drop_gene_annotation(data, annotations)
+        return _drop_cell_annotation(data, annotation)
+    return _drop_gene_annotation(data, annotation)
 
 def _drop_cell_annotation(data, annot_name):
     if annot_name not in data.obs_keys():
         logging.warning(f"Annotation '{annot_name}' not present in cell annotations (obs), ignoring")
-        return
+        return None
     data.obs.pop(annot_name)
+    return f"Removed cell annotation {annot_name}"
 
 def _drop_gene_annotation(data, annot_name):
     if annot_name not in data.var_keys():
         logging.warning(f"Annotation '{annot_name}' not present in gene annotations (var), ignoring")
-        return
+        return None
     data.var.pop(annot_name)
+    return f"Removed gene annotation {annot_name}"

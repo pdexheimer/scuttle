@@ -101,15 +101,15 @@ def annotate_help():
       cellecta         Process cell barcodes using the Cellecta viral tags, and assign clone ids to cells
 
     Cells/Genes Options
-      --file FILE      The (tab-separated) file to read annotations from
-      --no-header      By default, the first line of the file is assumed to contain column names.
-                       Specify this if the first line of the file is data
-      --name           The name of the annotation to store.  Multiple annotations can be comma-separated
-      --id-column      The column number (starting with 0) in FILE that contains the cell/gene ids
-      --annot-column   The column number (starting with 0) in FILE that contains the values to add as annotation.
-                       Multiple columns can be comma-separated
-      --id-suffix      This value will be appended to all cell/gene ids in FILE
-      --drop           The annotation(s) specified with --name will be REMOVED from the data
+      --file FILE         The (tab-separated) file to read annotations from
+      --no-header         By default, the first line of the file is assumed to contain column names.
+                          Specify this if the first line of the file is data
+      --name ANNOTATION   The name of the annotation to store.  Multiple annotations can be comma-separated
+      --id-column COL     The column number (starting with 0) in FILE that contains the cell/gene ids
+      --annot-column COL  The column number (starting with 0) in FILE that contains the values to add as annotation.
+                          Multiple columns can be comma-separated
+      --id-suffix SUFFIX  This value will be appended to all cell/gene ids in FILE
+      --drop ANNOTATION   The specified annotation will be REMOVED from the data
     
     Cellecta Options
       --fastqs READ1 READ2   The raw reads of the barcode library
@@ -124,11 +124,14 @@ def describe_help():
     scuttle describe - Describe the data and metadata for a single-cell dataset
 
     Usage:
-      scuttle -i FILE describe [options]
+      scuttle -i FILE describe [history] [options]
     
     Options:
       --verbose, -v       Descibe the metadata in more detail - numerical data is 
                           summarized, most frequent categories are shown, etc
+    
+    If 'describe history' is given, then scuttle's history of operations on the file will be displayed.
+    With just 'describe', the data and annotations in the file are described.
     ''')
 
 def select_help():

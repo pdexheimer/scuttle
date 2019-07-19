@@ -54,11 +54,11 @@ cellecta | Process cell barcodes using the Cellecta viral tags, and assign clone
 -----|------
 --file FILE | The (tab-separated) file to read annotations from
 --no-header | By default, the first line of the file is assumed to contain column names. Specify this if the first line of the file is data
---name | The name of the annotation to store.  Multiple annotations can be comma-separated
---id-column | The column number (starting with 0) in FILE that contains the cell/gene ids
---annot-column | The column number (starting with 0) in FILE that contains the values to add as annotation. Multiple columns can be comma-separated
---id-suffix | This value will be appended to all cell/gene ids in FILE
---drop | The annotation(s) specified with --name will be REMOVED from the data
+--name ANNOTATION | The name of the annotation to store.  Multiple annotations can be comma-separated
+--id-column COL | The column number (starting with 0) in FILE that contains the cell/gene ids
+--annot-column COL | The column number (starting with 0) in FILE that contains the values to add as annotation. Multiple columns can be comma-separated
+--id-suffix SUFFIX | This value will be appended to all cell/gene ids in FILE
+--drop ANNOTATION | The specified annotation will be REMOVED from the data
 
 `cellecta` Option|Description
 -------|---------
@@ -81,3 +81,15 @@ Examples:
 `select genes 'num_cells < 10'`
 
 `select cells 'num_genes > 500 or is_doublet == False'`
+
+### `describe`
+
+Usage: `scuttle -i FILE describe [history] [options]`
+
+Option | Description
+-------|------------
+--verbose, -v | Enable more detailed output
+
+`describe` prints a summary of the data/annotations contained in FILE to standard output.  Without `--verbose`, only basic dimensions and names of annotations are displayed.  With `--verbose`, a summary of the annotation values is also produced.
+
+`describe history` prints scuttle's history of operations that have been performed on the file.  Once again, adding `--verbose` will include more information
