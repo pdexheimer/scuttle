@@ -25,6 +25,7 @@ import pandas as pd
 import numpy as np
 from . import barcode
 
+
 def _read_sequence(f):
     if f.readline() == '':
         return None
@@ -33,6 +34,7 @@ def _read_sequence(f):
     f.readline()
     return seq
 
+
 def _extract_r1_barcodes(r1):
     # Read 1 format: [Cell barcode (16bp)][UMI (10bp)][Poly-T]
     if r1[26:30] == 'TTTT':
@@ -40,12 +42,14 @@ def _extract_r1_barcodes(r1):
     else:
         return 'N/A', 'N/A'
 
+
 def _extract_r2_barcodes(r2):
     # Read 2 format: [BC14 (14bp)]TGGT[BC30 (30bp)]
     if r2[14:18] == 'TGGT':
         return r2[:14], r2[18:48]
     else:
         return 'N/A', 'N/A'
+
 
 def _load_tags(filename):
     tags = {}
@@ -55,13 +59,14 @@ def _load_tags(filename):
             tags[seq] = bc_id
     return tags
 
+
 def _next_barcode(read1_fastq, read2_fastq):
     with gzip.open(read1_fastq, 'rt') as r1:
         with gzip.open(read2_fastq, 'rt') as r2:
             while True:
                 read1 = _read_sequence(r1)
                 read2 = _read_sequence(r2)
-                if read1 == None or read2 == None:
+                if read1 is None or read2 is None:
                     break
                 r1_barcodes = _extract_r1_barcodes(read1)
                 if r1_barcodes[0] == 'N/A':
@@ -71,9 +76,11 @@ def _next_barcode(read1_fastq, read2_fastq):
                     continue
                 yield r1_barcodes + r2_barcodes
 
+
 def _filter_confident_tags(cell_counts):
-    conf_tags = { cell: { bc: count for bc, count in cell_counts[cell].items() if count > 1 } for cell in cell_counts }
-    return { cell: barcodes for cell, barcodes in conf_tags.items() if len(barcodes) > 0 }
+    conf_tags = {cell: {bc: count for bc, count in cell_counts[cell].items() if count > 1} for cell in cell_counts}
+    return {cell: barcodes for cell, barcodes in conf_tags.items() if len(barcodes) > 0}
+
 
 def _accumulate_counts(counts):
     result = {}
@@ -85,12 +92,13 @@ def _accumulate_counts(counts):
                 result[cell][bc] += count[cell][bc]
     return result
 
+
 def assign_tags(data, fastqs, bc14_file, bc30_file, cell_suffix, n_proc=-1):
-    whitelist = set([ cell_bc.rsplit('-', maxsplit=1)[0] for cell_bc in data.obs_names ])
+    whitelist = set([cell_bc.rsplit('-', maxsplit=1)[0] for cell_bc in data.obs_names])
     with multiprocessing.Pool(n_proc, barcode.initialize_barcodes, (bc14_file, bc30_file)) as pool:
         cell_counts = _accumulate_counts(pool.imap_unordered(barcode.count,
-                        ((bc,) for bc in _next_barcode(*fastqs) if bc[0] in whitelist),
-                        chunksize=100000))
+                                         ((bc,) for bc in _next_barcode(*fastqs) if bc[0] in whitelist),
+                                         chunksize=100000))
     cell_counts = _filter_confident_tags(cell_counts)
     doublets = pd.Series(np.zeros(data.obs_names.shape, dtype=np.bool_), index=data.obs_names)
     tags = pd.Series(np.empty(data.obs_names.shape, dtype=str), index=data.obs_names)
@@ -105,6 +113,5 @@ def assign_tags(data, fastqs, bc14_file, bc30_file, cell_suffix, n_proc=-1):
             conf_count += 1
     data.obs['doublet'] = doublets
     data.obs['tags'] = tags
-    logging.info(f"Confidently assigned cells: {conf_count}")
-    logging.info(f"Putative_doublets: {doublet_count}")
-
+    logging.info(f'Confidently assigned cells: {conf_count}')
+    logging.info(f'Putative_doublets: {doublet_count}')

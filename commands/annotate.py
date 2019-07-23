@@ -25,6 +25,7 @@ import logging
 import os.path
 import pandas as pd
 
+
 def commands():
     annot_cmd = cmd.CommandDescription('annotate')
     cell_cmd = cmd.CommandDescription('cells')
@@ -40,7 +41,8 @@ def commands():
     cellecta_cmd.add_option('--id-suffix', destvar='id_suffix', default='')
     cellecta_cmd.add_option('--procs', '-p', destvar='procs', default=-1, type=int)
     annot_cmd.add_subcommand(cellecta_cmd)
-    return [ cmd.CommandTemplate(annot_cmd, process, validate_args) ]
+    return [cmd.CommandTemplate(annot_cmd, process, validate_args)]
+
 
 def _add_options(command):
     command.add_option('--file', destvar='annot_file')
@@ -55,39 +57,43 @@ def _add_options(command):
 def validate_args(args):
     if args.subcommand == 'cellecta':
         return
-    annotations = ( args.annot_file is not None,
-                    args.annotation is not None)
+    annotations = (args.annot_file is not None,
+                   args.annotation is not None)
     if any(annotations) and not all(annotations):
-        logging.critical(f"{args.target.capitalize()} annotations have only been partially specified (see --file, --name, --id-column, and --annot-column)")
+        logging.critical(f'{args.target.capitalize()} annotations have only been partially specified'
+                         f' (see --file, --name, --id-column, and --annot-column)')
         exit(1)
     args.annotation = args.annotation.split(',') if args.annotation else ['none']
     try:
-        args.annot_column = [ int(x) for x in args.annot_column.split(',') ]
+        args.annot_column = [int(x) for x in args.annot_column.split(',')]
     except ValueError:
-        logging.critical("--annot-column must be (possibly comma-separated) integer(s)")
+        logging.critical('--annot-column must be (possibly comma-separated) integer(s)')
         exit(1)
     if len(args.annotation) != len(args.annot_column):
-        logging.critical("Length of --name must match --annot-column")
+        logging.critical('Length of --name must match --annot-column')
         exit(1)
+
 
 def process(args, data):
     if args.subcommand == 'cellecta':
         assign_tags.assign_tags(data, args.fastqs, args.bc14, args.bc30, args.id_suffix, args.procs)
-        history.add_history_entry(data, args, 
-            f"Processed Cellecta tags from FASTQs {os.path.abspath(args.fastqs[0])} and {os.path.abspath(args.fastq[1])}")
+        history.add_history_entry(data, args,
+                                  f'Processed Cellecta tags from FASTQs {os.path.abspath(args.fastqs[0])}'
+                                  f' and {os.path.abspath(args.fastq[1])}')
     else:
         if args.drop:
             description = drop_annotation(data, args.subcommand, args.drop)
         if args.annot_file is not None:
-            add_annotation(data, args.subcommand, args.annot_file, args.header, args.annotation, 
-                                args.id_column, args.annot_column, args.id_suffix)
+            add_annotation(data, args.subcommand, args.annot_file, args.header, args.annotation,
+                           args.id_column, args.annot_column, args.id_suffix)
             if args.subcommand == 'cells':
                 target = 'cell'
             else:
                 target = 'gene'
-            description = f"Added {target} annotation(s) {args.annotation} from file {os.path.abspath(args.annot_file)}"
+            description = f'Added {target} annotation(s) {args.annotation} from file {os.path.abspath(args.annot_file)}'
         if description is not None:
             history.add_history_entry(data, args, description)
+
 
 def add_annotation(data, target, filename, header_present, annot_name, id_column, annotation_column, id_suffix=''):
     header_row = 'infer' if header_present else None
@@ -100,22 +106,25 @@ def add_annotation(data, target, filename, header_present, annot_name, id_column
         else:
             data.var[name] = annot[col]
 
+
 def drop_annotation(data, target, annotation):
-    "Returns a description of the operation, or None in case of error"
+    """Returns a description of the operation, or None in case of error"""
     if target == 'cells':
         return _drop_cell_annotation(data, annotation)
     return _drop_gene_annotation(data, annotation)
+
 
 def _drop_cell_annotation(data, annot_name):
     if annot_name not in data.obs_keys():
         logging.warning(f"Annotation '{annot_name}' not present in cell annotations (obs), ignoring")
         return None
     data.obs.pop(annot_name)
-    return f"Removed cell annotation {annot_name}"
+    return f'Removed cell annotation {annot_name}'
+
 
 def _drop_gene_annotation(data, annot_name):
     if annot_name not in data.var_keys():
         logging.warning(f"Annotation '{annot_name}' not present in gene annotations (var), ignoring")
         return None
     data.var.pop(annot_name)
-    return f"Removed gene annotation {annot_name}"
+    return f'Removed gene annotation {annot_name}'

@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import sys
 
+
 def commands():
     select_cmd = cmd.CommandDescription('select')
     cell_cmd = cmd.CommandDescription('cells')
@@ -30,7 +31,8 @@ def commands():
     gene_cmd.add_argument('expression')
     select_cmd.add_subcommand(cell_cmd)
     select_cmd.add_subcommand(gene_cmd)
-    return [ cmd.CommandTemplate(select_cmd, process) ]
+    return [cmd.CommandTemplate(select_cmd, process)]
+
 
 def process(args, data):
     if args.subcommand == 'cells':
@@ -48,6 +50,7 @@ def process(args, data):
     description = f"Kept {args.subcommand} that satisfy '{args.expression}' ({data.n_obs} cells x {data.n_vars} genes)"
     history.add_history_entry(data, args, description)
 
+
 class EvaluateFilter(ast.NodeVisitor):
     def __init__(self, data, cell_or_gene):
         self.data = data
@@ -60,48 +63,48 @@ class EvaluateFilter(ast.NodeVisitor):
     def visit_UnaryOp(self, node):
         if isinstance(node.op, ast.Not):
             return np.logical_not(self.visit(node.operand))
-        logging.critical("Unary addition, subtraction, and inversion are not supported")
+        logging.critical('Unary addition, subtraction, and inversion are not supported')
         sys.exit(1)
-    
+
     def visit_BinaryOp(self, node):
-        logging.critical("Binary operators are not supported")
+        logging.critical('Binary operators are not supported')
         sys.exit(1)
 
     def visit_BoolOp(self, node):
         if isinstance(node.op, ast.And):
             result = np.logical_and(self.visit(node.values[0]), self.visit(node.values[1]))
             if len(node.values) > 2:
-                for i in range(2, len(node.values)):
+                for _i in range(2, len(node.values)):
                     result = np.logical_and(result, node.values[2])
             return result
         elif isinstance(node.op, ast.Or):
             result = np.logical_or(self.visit(node.values[0]), self.visit(node.values[1]))
             if len(node.values) > 2:
-                for i in range(2, len(node.values)):
+                for _i in range(2, len(node.values)):
                     result = np.logical_or(result, node.values[2])
             return result
-        return None # AND and OR are the only possible BoolOps
-    
+        return None  # AND and OR are the only possible BoolOps
+
     def visit_Compare(self, node):
         if len(node.ops) > 1:
-            logging.critical("Multiple comparisons (ie, 1 < a < 10) are not allowed")
+            logging.critical('Multiple comparisons (ie, 1 < a < 10) are not allowed')
             sys.exit(1)
         left = self.visit(node.left)
         right = self.visit(node.comparators[0])
         if not isinstance(left, str):
-            logging.critical("The left side of a comparison must be an annotation (n_genes > 200, not 200 < n_genes)")
+            logging.critical('The left side of a comparison must be an annotation (n_genes > 200, not 200 < n_genes)')
             sys.exit(1)
         return self.filter_data(left, right, node.ops[0])
 
     def visit_Num(self, node):
         return node.n
-    
+
     def visit_Name(self, node):
         return node.id
 
     def visit_Str(self, node):
         return node.s
-    
+
     def filter_data(self, annotation, target, op):
         if self.use_cells:
             if annotation not in self.data.obs_keys():
@@ -137,5 +140,5 @@ class EvaluateFilter(ast.NodeVisitor):
             return metric > target
         if isinstance(op, ast.GtE):
             return metric >= target
-        logging.critical("The operators is, is not, in, and in not are not supported")
+        logging.critical('The operators is, is not, in, and in not are not supported')
         sys.exit(1)

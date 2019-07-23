@@ -53,6 +53,7 @@ global_options = [
     cmd.CommandLineOption('--no-compress', destvar='compress', action='store_false')
 ]
 
+
 class SingleCellIO:
     def __init__(self):
         self.loader = lambda filename: None
@@ -73,8 +74,8 @@ class SingleCellIO:
     def log_import(self, data):
         if self.args.input_format == 'h5ad':
             return
-        description = (f"Imported {self.args.input_format} data from {os.path.abspath(self.input_filename)}" 
-                        f" ({data.n_obs} cells x {data.n_vars} genes)")
+        description = (f'Imported {self.args.input_format} data from {os.path.abspath(self.input_filename)}'
+                       f' ({data.n_obs} cells x {data.n_vars} genes)')
         history.add_history_entry(data, self.args, description)
 
     def get_loader(self, input_format):
@@ -85,7 +86,7 @@ class SingleCellIO:
         elif input_format == '10x':
             return SingleCellIO.load_10x
         return lambda filename: None
-    
+
     def get_writer(self, output_format, compress):
         if output_format == 'h5ad':
             return functools.partial(SingleCellIO.write_h5ad, compression='gzip' if compress else None)
@@ -94,10 +95,10 @@ class SingleCellIO:
 
     def write_h5ad(data, filename, **kwargs):
         return data.write(filename, **kwargs)
-    
+
     def write_loom(data, filename):
         return data.write_loom(filename)
-    
+
     def load_10x(filename):
         if filename.endswith('.h5'):
             return sc.read_10x_h5(filename)
@@ -106,7 +107,7 @@ class SingleCellIO:
 
     def validate_args(args):
         if args.input is None:
-            logging.critical("Input file must be specified with -i")
+            logging.critical('Input file must be specified with -i')
             exit(1)
 
         if args.input_format == 'h5ad':
@@ -115,17 +116,17 @@ class SingleCellIO:
             SingleCellIO._validate_10x_filename(args.input, 'input')
         elif args.input_format == 'loom':
             SingleCellIO._validate_loom_filename(args.input, 'input')
-        
+
         if not os.path.exists(args.input):
-            logging.critical(f"Input file {args.input} does not exist.  Aborting")
+            logging.critical(f'Input file {args.input} does not exist.  Aborting')
             exit(1)
-                
+
         if args.write:
             if not args.output and args.input_format == 'h5ad':
                 args.output = args.input
             if not args.output:
                 logging.critical('Must specify an output filename with any input-format that is not h5ad')
-                sys.exit(1)
+                exit(1)
             if args.output_format == 'h5ad':
                 SingleCellIO._validate_h5ad_filename(args.output, 'output')
             elif args.output_format == 'loom':
@@ -136,18 +137,23 @@ class SingleCellIO:
 
     def _validate_h5ad_filename(filename, input_or_output):
         if not filename.endswith('.h5ad'):
-            logging.critical(f"{input_or_output} file '{filename}' does not have an .h5ad extension.  Change the expected format with --{input_or_output}-format")
+            logging.critical(f"{input_or_output} file '{filename}' does not have an .h5ad extension."
+                             f' Change the expected format with --{input_or_output}-format')
             exit(1)
 
     def _validate_loom_filename(filename, input_or_output):
         if not filename.endswith('.loom'):
-            logging.critical(f"{input_or_output} file '{filename}' does not have a .loom extension.  Change the expected format with --{input_or_output}-format")
+            logging.critical(f"{input_or_output} file '{filename}' does not have a .loom extension."
+                             f' Change the expected format with --{input_or_output}-format')
             exit(1)
 
     def _validate_10x_filename(filename, input_or_output):
         if not (os.path.isdir(filename) or filename.endswith('.h5')):
-            logging.critical(f"{input_or_output} file '{filename}' does not look like a 10x file. It should either be an .h5 file or the directory containing the .mtx file. Change the expected format with --{input_or_output}-format")
+            logging.critical(f"{input_or_output} file '{filename}' does not look like a 10x file."
+                             f' It should either be an .h5 file or the directory containing the .mtx file.'
+                             f' Change the expected format with --{input_or_output}-format')
             exit(1)
+
 
 def parse_arguments(scio):
     command_templates = []
@@ -156,8 +162,9 @@ def parse_arguments(scio):
     command_templates.extend(annotate.commands())
     command_templates.extend(help.commands())
 
-    return cmd.parse(command_templates, 
-                    cmd.GlobalTemplate(global_options, scio.process_args, SingleCellIO.validate_args))
+    return cmd.parse(command_templates,
+                     cmd.GlobalTemplate(global_options, scio.process_args, SingleCellIO.validate_args))
+
 
 def main():
     logging.config.dictConfig(logConfig)
@@ -166,7 +173,7 @@ def main():
 
     if len(command_list) == 0 and global_args.args.input is None:
         command_list.append(cmd.Command(cmd.Namespace(), help.process, cmd.CommandTemplate.no_validate))
-    
+
     if len(command_list) == 1 and command_list[0].dispatch == help.process:
         command_list[0].execute(None)
     else:
@@ -180,6 +187,7 @@ def main():
         for c in command_list:
             c.execute(data)
         scio.writer(data, scio.output_filename)
+
 
 if __name__ == '__main__':
     main()

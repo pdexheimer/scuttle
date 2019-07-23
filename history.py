@@ -29,6 +29,7 @@ from pkg_resources import get_distribution, DistributionNotFound
 # https://github.com/theislab/anndata/issues/134
 # So as a workaround, we'll use numpy record arrays (which are actually read as plain old structured arrays)
 
+
 def blank_entry():
     try:
         version = get_distribution('scuttle').version
@@ -42,6 +43,7 @@ def blank_entry():
             (datetime.datetime.now().ctime(),),
             (version,)
         ], names=('hostname', 'user', 'python', 'operating_system', 'timestamp', 'version'))
+
 
 def add_history_entry(data, args, description):
     entry = rfn.append_fields(blank_entry(), ('parameters', 'description'), [(repr(vars(args)),), (description,)])

@@ -17,10 +17,12 @@
 import sys
 import logging
 
+
 class DuplicateArgumentError(Exception):
     def __init__(self, arg_name, context):
         self.duplicate_argument = arg_name
         self.duplicate_context = context
+
 
 class CommandLineOption:
     def __init__(self, name, *alt_names, destvar=None, nargs=1, action='store', default=None, type=str, choices=None):
@@ -42,10 +44,10 @@ class CommandLineOption:
             self.default = True
             self.type = bool
             self.nargs = 0
-    
+
     def _set_defaults(self, namespace):
         setattr(namespace, self.destvar, self.default if self.default is None else self.type(self.default))
-    
+
     def parse(self, args, namespace):
         value = None
         if self.action == 'store_true':
@@ -54,10 +56,11 @@ class CommandLineOption:
             value = False
         else:
             try:
-                value = self.validate([ self.type(x) for x in args ])
+                value = self.validate([self.type(x) for x in args])
             except ValueError:
                 raise
-            if len(value) == 1: value = value[0]
+            if len(value) == 1:
+                value = value[0]
         setattr(namespace, self.destvar, value)
 
     def validate(self, values):
@@ -69,13 +72,16 @@ class CommandLineOption:
                 sys.exit(1)
         return values
 
+
 class Namespace:
     pass
+
 
 class GlobalNamespace(Namespace):
     def __init__(self, global_template):
         for opt in global_template.options:
             opt._set_defaults(self)
+
 
 class CommandDescription:
     def __init__(self, verb):
@@ -83,14 +89,14 @@ class CommandDescription:
         self.sub_commands = []
         self.options = []
         self.arguments = []
-        self._parameters = { }
-    
+        self._parameters = {}
+
     def add_subcommand(self, subcommand):
         if subcommand.verb in self._parameters.keys():
             raise DuplicateArgumentError(subcommand.verb, self.verb)
         self.sub_commands.append(subcommand)
         self._parameters[subcommand.verb] = subcommand
-                
+
     def add_option(self, name, *args, **kwargs):
         option = CommandLineOption(name, *args, **kwargs)
         for arg in [name] + list(args):
@@ -98,7 +104,7 @@ class CommandDescription:
                 raise DuplicateArgumentError(arg, self.verb)
             self._parameters[arg] = option
         self.options.append(option)
-    
+
     def add_argument(self, name):
         self.arguments.append(name)
 
@@ -125,7 +131,7 @@ class CommandDescription:
                 parameter = self._parameters[arg]
                 remaining_args.pop(0)
                 if isinstance(parameter, CommandDescription):
-                    setattr(namespace, 'subcommand', parameter.verb)
+                    namespace.subcommand = parameter.verb
                     return parameter.parse(remaining_args, global_template, global_namespace, namespace)
                 elif isinstance(parameter, CommandLineOption):
                     arguments = remaining_args[:parameter.nargs]
@@ -137,6 +143,7 @@ class CommandDescription:
             print(f'Missing {len(self.arguments)-next_argument} required arguments')
         return (namespace, global_namespace, remaining_args)
 
+
 class CommandTemplate:
     def __init__(self, description, dispatch, validate=None):
         self.description = description
@@ -147,16 +154,17 @@ class CommandTemplate:
     def no_validate(args):
         pass
 
+
 class GlobalTemplate:
     def __init__(self, option_list, dispatch, validate=None):
         self.options = option_list
         self.dispatch = dispatch
         self.validate = validate if validate is not None else GlobalTemplate.no_validate
-        self._parameters = { y: x for x in option_list for y in x.all_names }
-    
+        self._parameters = {y: x for x in option_list for y in x.all_names}
+
     def is_global(self, arg):
         return arg in self._parameters.keys()
-    
+
     def parse(self, args, namespace):
         while len(args) > 0:
             arg = args[0]
@@ -175,6 +183,7 @@ class GlobalTemplate:
     def no_validate(args):
         pass
 
+
 class Command:
     def __init__(self, args, dispatch, validate):
         self.args = args
@@ -187,22 +196,27 @@ class Command:
     def execute(self, *args, **kwargs):
         self.dispatch(self.args, *args, **kwargs)
 
+
 def parse(template_list, global_template, argv=None):
     if argv is None:
         argv = sys.argv[1:]
     global_args = GlobalNamespace(global_template)
-    lookup = { x.name: x for x in template_list }
+    lookup = {x.name: x for x in template_list}
     commands = []
     remaining_args = list(argv)
     while len(remaining_args) > 0:
         arg = remaining_args[0]
         if arg in lookup:
             remaining_args.pop(0)
-            (parsed_args, global_args, remaining_args) = lookup[arg].description.parse(remaining_args, global_template, global_args)
+            (parsed_args, global_args, remaining_args) = lookup[arg].description.parse(
+                remaining_args,
+                global_template,
+                global_args
+            )
             commands.append(Command(parsed_args, lookup[arg].dispatch, lookup[arg].validate))
         elif global_template.is_global(arg):
             global_template.parse(remaining_args, global_args)
         else:
-            print(f"Unparsed arguments: {remaining_args}")
+            print(f'Unparsed arguments: {remaining_args}')
             break
     return (Command(global_args, global_template.dispatch, global_template.validate), commands)
