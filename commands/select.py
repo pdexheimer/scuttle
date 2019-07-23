@@ -16,6 +16,7 @@
 
 import ast
 from . import command as cmd
+import history
 import logging
 import numpy as np
 import pandas as pd
@@ -44,6 +45,8 @@ def process(args, data):
         s = np.sum(~gene_subset)
         logging.info(f'Removed {s} genes')
         data._inplace_subset_var(gene_subset)
+    description = f"Kept {args.subcommand} that satisfy '{args.expression}' ({data.n_obs} cells x {data.n_vars} genes)"
+    history.add_history_entry(data, args, description)
 
 class EvaluateFilter(ast.NodeVisitor):
     def __init__(self, data, cell_or_gene):
@@ -95,6 +98,9 @@ class EvaluateFilter(ast.NodeVisitor):
     
     def visit_Name(self, node):
         return node.id
+
+    def visit_Str(self, node):
+        return node.s
     
     def filter_data(self, annotation, target, op):
         if self.use_cells:

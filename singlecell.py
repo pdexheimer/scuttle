@@ -16,11 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from argparse import ArgumentParser
 from commands import command as cmd, select, describe, annotate, help
 import functools
+import history
 import logging.config
 import os
+import os.path
 import scanpy as sc
 
 logConfig = {
@@ -67,6 +68,14 @@ class SingleCellIO:
             self.output_filename = args.output
             self.writer = self.get_writer(args.output_format, args.compress)
         self.loader = self.get_loader(args.input_format)
+        self.args = args
+
+    def log_import(self, data):
+        if self.args.input_format == 'h5ad':
+            return
+        description = (f"Imported {self.args.input_format} data from {os.path.abspath(self.input_filename)}" 
+                        f" ({data.n_obs} cells x {data.n_vars} genes)")
+        history.add_history_entry(data, self.args, description)
 
     def get_loader(self, input_format):
         if input_format == 'h5ad':
@@ -155,7 +164,7 @@ def main():
     scio = SingleCellIO()
     global_args, command_list = parse_arguments(scio)
 
-    if len(command_list) == 0:
+    if len(command_list) == 0 and global_args.args.input is None:
         command_list.append(cmd.Command(cmd.Namespace(), help.process, cmd.CommandTemplate.no_validate))
     
     if len(command_list) == 1 and command_list[0].dispatch == help.process:
@@ -167,6 +176,7 @@ def main():
 
         global_args.execute()
         data = scio.loader(scio.input_filename)
+        scio.log_import(data)
         for c in command_list:
             c.execute(data)
         scio.writer(data, scio.output_filename)

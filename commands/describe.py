@@ -26,13 +26,32 @@ from scipy.sparse import issparse
 def commands():
     describe_cmd = cmd.CommandDescription('describe')
     describe_cmd.add_option('--verbose', '-v', destvar='verbose', action='store_true')
+    history_cmd = cmd.CommandDescription('history')
+    history_cmd.add_option('--verbose', '-v', destvar='verbose', action='store_true')
+    describe_cmd.add_subcommand(history_cmd)
     return [ cmd.CommandTemplate(describe_cmd, process) ]
 
 def process(args, data):
-    if args.verbose:
-        _full_summary(data)
+    if not hasattr(args, 'subcommand'):
+        if args.verbose:
+            _full_summary(data)
+        else:
+            _brief_summary(data)
     else:
-        _brief_summary(data)
+        _show_history(data, args.verbose)
+
+def _show_history(data, verbose):
+    if 'history' not in data.uns_keys():
+        print("No history stored in this file")
+        return
+    for entry in data.uns['history']:
+        if verbose:
+            print(f"[{entry['timestamp']}]")
+            print(f"    {entry['description']}")
+            print(f"    Run by {entry['user']}@{entry['hostname']} ({entry['operating_system']})")
+            print(f"    scuttle v{entry['version']} (Python {entry['python']}), parameters: {entry['parameters']}")
+        else:
+            print(f"[{entry['timestamp']}] {entry['description']}")
 
 def _brief_summary(data):
     print(f"Number of cells: {data.n_obs}")
@@ -70,7 +89,9 @@ def _full_summary(data):
     for x in data.varm_keys(): print(_summarize(x, data.varm[x]))
     print()
     print("Unstructured data")
-    for x in data.uns_keys(): print(_summarize(x, data.uns[x]))
+    for x in data.uns_keys(): 
+        if x != 'history':
+            print(_summarize(x, data.uns[x]))
     
 
 def _summarize(name, collection):
