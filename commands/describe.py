@@ -18,10 +18,11 @@
 Summarizes the annotations attached to the h5ad
 """
 
-from . import command as cmd
 import numpy as np
 import pandas as pd
 from scipy.sparse import issparse
+
+from . import command as cmd
 
 
 def commands():

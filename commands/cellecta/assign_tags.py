@@ -21,8 +21,10 @@ This module uses the Cellecta viral tags to define clonal lineages among the cel
 import gzip
 import logging
 import multiprocessing
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+
 from . import barcode
 
 

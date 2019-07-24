@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import sys
 import logging
+import sys
 
 
 class DuplicateArgumentError(Exception):
@@ -151,6 +151,7 @@ class CommandTemplate:
         self.dispatch = dispatch
         self.validate = validate if validate is not None else CommandTemplate.no_validate
 
+    @staticmethod
     def no_validate(args):
         pass
 
@@ -180,6 +181,7 @@ class GlobalTemplate:
                 raise ValueError
         return
 
+    @staticmethod
     def no_validate(args):
         pass
 

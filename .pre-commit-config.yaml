@@ -1,0 +1,22 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v2.2.3
+  hooks:
+  - id: check-merge-conflict
+- repo: https://gitlab.com/pycqa/flake8
+  rev: 3.7.4
+  hooks:
+  - id: flake8
+    additional_dependencies:
+    - flake8-bugbear
+    - flake8-quotes
+- repo: https://github.com/timothycrosley/isort
+  rev: 4.3.21-2
+  hooks:
+  - id: isort
+    args:
+    - --project=commands
+    - --balanced
+    - --check-only
+    - --virtual-env=env
+    files: '\.py$'

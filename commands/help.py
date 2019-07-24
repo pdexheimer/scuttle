@@ -18,8 +18,9 @@
 Command line help system
 """
 
-from . import command as cmd
 import textwrap
+
+from . import command as cmd
 
 
 def commands():

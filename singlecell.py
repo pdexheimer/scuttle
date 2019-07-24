@@ -16,13 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from commands import command as cmd, select, describe, annotate, help
 import functools
-import history
 import logging.config
 import os
 import os.path
+
 import scanpy as sc
+
+import history
+from commands import annotate
+from commands import command as cmd
+from commands import describe, help, select
 
 logConfig = {
     'version': 1,
@@ -93,18 +97,22 @@ class SingleCellIO:
         elif output_format == 'loom':
             return SingleCellIO.write_loom
 
+    @staticmethod
     def write_h5ad(data, filename, **kwargs):
         return data.write(filename, **kwargs)
 
+    @staticmethod
     def write_loom(data, filename):
         return data.write_loom(filename)
 
+    @staticmethod
     def load_10x(filename):
         if filename.endswith('.h5'):
             return sc.read_10x_h5(filename)
         else:
             return sc.read_10x_mtx(filename)
 
+    @staticmethod
     def validate_args(args):
         if args.input is None:
             logging.critical('Input file must be specified with -i')
@@ -135,18 +143,21 @@ class SingleCellIO:
             if args.output is not None:
                 logging.warning('Output file and --no-write specified.  No output will be written')
 
+    @staticmethod
     def _validate_h5ad_filename(filename, input_or_output):
         if not filename.endswith('.h5ad'):
             logging.critical(f"{input_or_output} file '{filename}' does not have an .h5ad extension."
                              f' Change the expected format with --{input_or_output}-format')
             exit(1)
 
+    @staticmethod
     def _validate_loom_filename(filename, input_or_output):
         if not filename.endswith('.loom'):
             logging.critical(f"{input_or_output} file '{filename}' does not have a .loom extension."
                              f' Change the expected format with --{input_or_output}-format')
             exit(1)
 
+    @staticmethod
     def _validate_10x_filename(filename, input_or_output):
         if not (os.path.isdir(filename) or filename.endswith('.h5')):
             logging.critical(f"{input_or_output} file '{filename}' does not look like a 10x file."

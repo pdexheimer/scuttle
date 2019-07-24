@@ -1,7 +1,0 @@
-[flake8]
-exclude = build,env,.eggs
-max-line-length = 120
-#E701: Multiple statements on one line
-per-file-ignores =
-    commands/describe.py:E701
-select: C,E,F,W,B,Q,B902

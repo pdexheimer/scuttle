@@ -34,8 +34,8 @@ class TagCorpus:
         self._xlat = {seq: idx for idx, seq in enumerate(xlat)}
         for i in range(self._ngrams.shape[0]):
             seq = self._seqs[i]
-            for j in range(len(seq)-2):
-                ng = seq[j:j+3]
+            for j in range(len(seq) - 2):
+                ng = seq[j:j + 3]
                 if ng in self._xlat:
                     self._ngrams[i, self._xlat[ng]] += 1
 
@@ -47,8 +47,8 @@ class TagCorpus:
 
     def nearest_match(self, needle):
         ngram = np.zeros((1, 64), dtype=int)
-        for i in range(len(needle)-2):
-            ng = needle[i:i+3]
+        for i in range(len(needle) - 2):
+            ng = needle[i:i + 3]
             if ng in self._xlat:
                 ngram[0, self._xlat[ng]] += 1
         distances = scipy.spatial.distance.cdist(ngram, self._ngrams, 'cosine')

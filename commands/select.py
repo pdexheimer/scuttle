@@ -15,12 +15,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import ast
-from . import command as cmd
-import history
 import logging
+import sys
+
 import numpy as np
 import pandas as pd
-import sys
+
+import history
+
+from . import command as cmd
 
 
 def commands():

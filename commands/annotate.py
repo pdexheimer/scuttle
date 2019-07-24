@@ -18,12 +18,15 @@
 Manage cell/gene annotations - add from external sources, etc
 """
 
-from . import command as cmd
-from .cellecta import assign_tags
-import history
 import logging
 import os.path
+
 import pandas as pd
+
+import history
+
+from . import command as cmd
+from .cellecta import assign_tags
 
 
 def commands():
@@ -99,7 +102,7 @@ def add_annotation(data, target, filename, header_present, annot_name, id_column
     header_row = 'infer' if header_present else None
     annot = pd.read_csv(filename, sep='\t', header=header_row, index_col=id_column)
     if id_suffix:
-        annot.rename(lambda x: x+id_suffix, inplace=True)
+        annot.rename(lambda x: x + id_suffix, inplace=True)
     for name, col in zip(annot_name, annotation_column):
         if target == 'cells':
             data.obs[name] = annot[col]

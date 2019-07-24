@@ -20,10 +20,11 @@ Manages and writes history information to the h5ad
 
 import datetime
 import getpass
+import platform
+
 import numpy as np
 from numpy.lib import recfunctions as rfn
-import platform
-from pkg_resources import get_distribution, DistributionNotFound
+from pkg_resources import DistributionNotFound, get_distribution
 
 # Note that, as of version 0.6.22, anndata does not properly save pandas dataframes to uns:
 # https://github.com/theislab/anndata/issues/134
@@ -36,13 +37,13 @@ def blank_entry():
     except DistributionNotFound:
         version = '[Unknown]'
     return np.rec.fromarrays([
-            (platform.node(),),
-            (getpass.getuser(),),
-            (platform.python_version(),),
-            (platform.platform(aliased=True, terse=True),),
-            (datetime.datetime.now().ctime(),),
-            (version,)
-        ], names=('hostname', 'user', 'python', 'operating_system', 'timestamp', 'version'))
+        (platform.node(),),
+        (getpass.getuser(),),
+        (platform.python_version(),),
+        (platform.platform(aliased=True, terse=True),),
+        (datetime.datetime.now().ctime(),),
+        (version,)
+    ], names=('hostname', 'user', 'python', 'operating_system', 'timestamp', 'version'))
 
 
 def add_history_entry(data, args, description):
