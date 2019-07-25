@@ -52,6 +52,7 @@ def main():
     add_subcommands_to_parser(parser)
 
     if len(sys.argv) == 1:
+        # An empty command line altogether.  Make a dummy 'arguments' and call help
         class dummy:
             def __init__(self):
                 self.subcommand = None
@@ -63,7 +64,6 @@ def main():
 
     if global_args is None:
         # Help was explicitly invoked - no need to validate args or load data
-        # TODO: Detect an empty command line
         for c in command_list:
             c.execute()
         return
