@@ -23,18 +23,14 @@ import pandas as pd
 
 import history
 
-from . import command as cmd
 
-
-def commands():
-    select_cmd = cmd.CommandDescription('select')
-    cell_cmd = cmd.CommandDescription('cells')
+def add_to_parser(parser):
+    select_cmd = parser.add_verb('select')
+    cell_cmd = select_cmd.add_verb('cells')
     cell_cmd.add_argument('expression')
-    gene_cmd = cmd.CommandDescription('genes')
+    gene_cmd = select_cmd.add_verb('genes')
     gene_cmd.add_argument('expression')
-    select_cmd.add_subcommand(cell_cmd)
-    select_cmd.add_subcommand(gene_cmd)
-    return [cmd.CommandTemplate(select_cmd, process)]
+    select_cmd.set_executor(process)
 
 
 def process(args, data):

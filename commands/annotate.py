@@ -25,26 +25,23 @@ import pandas as pd
 
 import history
 
-from . import command as cmd
 from .cellecta import assign_tags
 
 
-def commands():
-    annot_cmd = cmd.CommandDescription('annotate')
-    cell_cmd = cmd.CommandDescription('cells')
+def add_to_parser(parser):
+    annot_cmd = parser.add_verb('annotate')
+    cell_cmd = annot_cmd.add_verb('cells')
     _add_options(cell_cmd)
-    annot_cmd.add_subcommand(cell_cmd)
-    gene_cmd = cmd.CommandDescription('genes')
+    gene_cmd = annot_cmd.add_verb('genes')
     _add_options(gene_cmd)
-    annot_cmd.add_subcommand(gene_cmd)
-    cellecta_cmd = cmd.CommandDescription('cellecta')
+    cellecta_cmd = annot_cmd.add_verb('cellecta')
     cellecta_cmd.add_option('--fastqs', destvar='fastqs', nargs=2)
     cellecta_cmd.add_option('--bc14', destvar='bc14')
     cellecta_cmd.add_option('--bc30', destvar='bc30')
     cellecta_cmd.add_option('--id-suffix', destvar='id_suffix', default='')
     cellecta_cmd.add_option('--procs', '-p', destvar='procs', default=-1, type=int)
-    annot_cmd.add_subcommand(cellecta_cmd)
-    return [cmd.CommandTemplate(annot_cmd, process, validate_args)]
+    annot_cmd.set_validator(validate_args)
+    annot_cmd.set_executor(process)
 
 
 def _add_options(command):

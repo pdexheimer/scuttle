@@ -20,22 +20,16 @@ Command line help system
 
 import textwrap
 
-from . import command as cmd
+
+def add_to_parser(parser):
+    parser.help.add_verb('annotate')
+    parser.help.add_verb('describe')
+    parser.help.add_verb('select')
+    parser.help.set_executor(process)
 
 
-def commands():
-    help_cmd = cmd.CommandDescription('help')
-    annot_cmd = cmd.CommandDescription('annotate')
-    desc_cmd = cmd.CommandDescription('describe')
-    select_cmd = cmd.CommandDescription('select')
-    help_cmd.add_subcommand(annot_cmd)
-    help_cmd.add_subcommand(desc_cmd)
-    help_cmd.add_subcommand(select_cmd)
-    return [cmd.CommandTemplate(help_cmd, process)]
-
-
-def process(args, data):
-    if not hasattr(args, 'subcommand'):
+def process(args):
+    if args.subcommand is None:
         help_text = global_help()
     elif args.subcommand == 'annotate':
         help_text = annotate_help()
@@ -43,9 +37,6 @@ def process(args, data):
         help_text = describe_help()
     elif args.subcommand == 'select':
         help_text = select_help()
-    else:
-        # Catchall - should never get here
-        help_text = global_help()
     print(help_text)
 
 
