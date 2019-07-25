@@ -22,16 +22,13 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import issparse
 
-from . import command as cmd
 
-
-def commands():
-    describe_cmd = cmd.CommandDescription('describe')
+def add_to_parser(parser):
+    describe_cmd = parser.add_verb('describe')
     describe_cmd.add_option('--verbose', '-v', destvar='verbose', action='store_true')
-    history_cmd = cmd.CommandDescription('history')
+    history_cmd = describe_cmd.add_verb('history')
     history_cmd.add_option('--verbose', '-v', destvar='verbose', action='store_true')
-    describe_cmd.add_subcommand(history_cmd)
-    return [cmd.CommandTemplate(describe_cmd, process)]
+    describe_cmd.set_executor(process)
 
 
 def process(args, data):

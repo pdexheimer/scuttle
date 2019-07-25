@@ -16,17 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import functools
 import logging.config
-import os
-import os.path
+import sys
 
-import scanpy as sc
-
-import history
-from commands import annotate
-from commands import command as cmd
-from commands import describe, help, select
+from commands import CommandParser, add_subcommands_to_parser
+from readwrite import ScuttleIO
 
 logConfig = {
     'version': 1,
@@ -48,156 +42,38 @@ logConfig = {
     }
 }
 
-global_options = [
-    cmd.CommandLineOption('--input', '-i', destvar='input'),
-    cmd.CommandLineOption('--output', '-o', destvar='output'),
-    cmd.CommandLineOption('--input-format', destvar='input_format', choices=['h5ad', '10x', 'loom'], default='h5ad'),
-    cmd.CommandLineOption('--output-format', destvar='output_format', choices=['h5ad', 'loom'], default='h5ad'),
-    cmd.CommandLineOption('--no-write', destvar='write', action='store_false'),
-    cmd.CommandLineOption('--no-compress', destvar='compress', action='store_false')
-]
-
-
-class SingleCellIO:
-    def __init__(self):
-        self.loader = lambda filename: None
-        self.writer = lambda data, filename: None
-        self.input_filename = None
-        self.output_filename = None
-        self.write_output = True
-
-    def process_args(self, args):
-        self.input_filename = args.input
-        self.write_output = args.write
-        if self.write_output:
-            self.output_filename = args.output
-            self.writer = self.get_writer(args.output_format, args.compress)
-        self.loader = self.get_loader(args.input_format)
-        self.args = args
-
-    def log_import(self, data):
-        if self.args.input_format == 'h5ad':
-            return
-        description = (f'Imported {self.args.input_format} data from {os.path.abspath(self.input_filename)}'
-                       f' ({data.n_obs} cells x {data.n_vars} genes)')
-        history.add_history_entry(data, self.args, description)
-
-    def get_loader(self, input_format):
-        if input_format == 'h5ad':
-            return sc.read_h5ad
-        elif input_format == 'loom':
-            return sc.read_loom
-        elif input_format == '10x':
-            return SingleCellIO.load_10x
-        return lambda filename: None
-
-    def get_writer(self, output_format, compress):
-        if output_format == 'h5ad':
-            return functools.partial(SingleCellIO.write_h5ad, compression='gzip' if compress else None)
-        elif output_format == 'loom':
-            return SingleCellIO.write_loom
-
-    @staticmethod
-    def write_h5ad(data, filename, **kwargs):
-        return data.write(filename, **kwargs)
-
-    @staticmethod
-    def write_loom(data, filename):
-        return data.write_loom(filename)
-
-    @staticmethod
-    def load_10x(filename):
-        if filename.endswith('.h5'):
-            return sc.read_10x_h5(filename)
-        else:
-            return sc.read_10x_mtx(filename)
-
-    @staticmethod
-    def validate_args(args):
-        if args.input is None:
-            logging.critical('Input file must be specified with -i')
-            exit(1)
-
-        if args.input_format == 'h5ad':
-            SingleCellIO._validate_h5ad_filename(args.input, 'input')
-        elif args.input_format == '10x':
-            SingleCellIO._validate_10x_filename(args.input, 'input')
-        elif args.input_format == 'loom':
-            SingleCellIO._validate_loom_filename(args.input, 'input')
-
-        if not os.path.exists(args.input):
-            logging.critical(f'Input file {args.input} does not exist.  Aborting')
-            exit(1)
-
-        if args.write:
-            if not args.output and args.input_format == 'h5ad':
-                args.output = args.input
-            if not args.output:
-                logging.critical('Must specify an output filename with any input-format that is not h5ad')
-                exit(1)
-            if args.output_format == 'h5ad':
-                SingleCellIO._validate_h5ad_filename(args.output, 'output')
-            elif args.output_format == 'loom':
-                SingleCellIO._validate_loom_filename(args.output, 'output')
-        else:
-            if args.output is not None:
-                logging.warning('Output file and --no-write specified.  No output will be written')
-
-    @staticmethod
-    def _validate_h5ad_filename(filename, input_or_output):
-        if not filename.endswith('.h5ad'):
-            logging.critical(f"{input_or_output} file '{filename}' does not have an .h5ad extension."
-                             f' Change the expected format with --{input_or_output}-format')
-            exit(1)
-
-    @staticmethod
-    def _validate_loom_filename(filename, input_or_output):
-        if not filename.endswith('.loom'):
-            logging.critical(f"{input_or_output} file '{filename}' does not have a .loom extension."
-                             f' Change the expected format with --{input_or_output}-format')
-            exit(1)
-
-    @staticmethod
-    def _validate_10x_filename(filename, input_or_output):
-        if not (os.path.isdir(filename) or filename.endswith('.h5')):
-            logging.critical(f"{input_or_output} file '{filename}' does not look like a 10x file."
-                             f' It should either be an .h5 file or the directory containing the .mtx file.'
-                             f' Change the expected format with --{input_or_output}-format')
-            exit(1)
-
-
-def parse_arguments(scio):
-    command_templates = []
-    command_templates.extend(select.commands())
-    command_templates.extend(describe.commands())
-    command_templates.extend(annotate.commands())
-    command_templates.extend(help.commands())
-
-    return cmd.parse(command_templates,
-                     cmd.GlobalTemplate(global_options, scio.process_args, SingleCellIO.validate_args))
-
 
 def main():
     logging.config.dictConfig(logConfig)
-    scio = SingleCellIO()
-    global_args, command_list = parse_arguments(scio)
 
-    if len(command_list) == 0 and global_args.args.input is None:
-        command_list.append(cmd.Command(cmd.Namespace(), help.process, cmd.CommandTemplate.no_validate))
+    parser = CommandParser()
+    scuttle_io = ScuttleIO()
+    ScuttleIO.add_options_to_parser(parser)
+    add_subcommands_to_parser(parser)
 
-    if len(command_list) == 1 and command_list[0].dispatch == help.process:
-        command_list[0].execute(None)
-    else:
-        global_args.validate_args()
+    if len(sys.argv) == 1:
+        class dummy:
+            def __init__(self):
+                self.subcommand = None
+
+        parser.help._execute_verb(dummy())
+        return
+
+    global_args, command_list = parser.parse()
+
+    if global_args is None:
+        # Help was explicitly invoked - no need to validate args or load data
+        # TODO: Detect an empty command line
         for c in command_list:
-            c.validate_args()
+            c.execute()
+        return
 
-        global_args.execute()
-        data = scio.loader(scio.input_filename)
-        scio.log_import(data)
-        for c in command_list:
-            c.execute(data)
-        scio.writer(data, scio.output_filename)
+    scuttle_io.validate_args(global_args)
+    scuttle_io.process_arguments(global_args)
+    data = scuttle_io.load_data()
+    for c in command_list:
+        c.execute(data)
+    scuttle_io.save_data(data)
 
 
 if __name__ == '__main__':
