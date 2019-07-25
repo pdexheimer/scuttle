@@ -19,8 +19,9 @@
 import logging.config
 import sys
 
-from commands import CommandParser, add_subcommands_to_parser
-from readwrite import ScuttleIO
+from scuttle.commands import CommandParser, add_subcommands_to_parser
+
+from .readwrite import ScuttleIO
 
 logConfig = {
     'version': 1,
