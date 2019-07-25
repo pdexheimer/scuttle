@@ -21,7 +21,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-import history
+from scuttle import history
 
 
 def add_to_parser(parser):

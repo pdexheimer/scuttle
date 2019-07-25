@@ -23,9 +23,8 @@ import os.path
 
 import pandas as pd
 
-import history
-
-from .cellecta import assign_tags
+from scuttle import history
+from scuttle.commands.cellecta import assign_tags
 
 
 def add_to_parser(parser):

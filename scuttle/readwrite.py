@@ -24,7 +24,7 @@ import os.path
 
 import scanpy as sc
 
-import history
+from scuttle import history
 
 
 class ScuttleIO:
