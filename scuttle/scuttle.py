@@ -86,7 +86,8 @@ def main():
     data = scuttle_io.load_data()
     for c in command_list:
         c.execute(data, n_procs=global_args.procs)
-    scuttle_io.save_data(data)
+    if history.has_file_changed():
+        scuttle_io.save_data(data)
 
 
 if __name__ == '__main__':

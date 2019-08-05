@@ -27,6 +27,8 @@ import numpy as np
 from numpy.lib import recfunctions as rfn
 from pkg_resources import DistributionNotFound, get_distribution
 
+_dirty_history = False
+
 # Note that, as of version 0.6.22, anndata does not properly save pandas dataframes to uns:
 # https://github.com/theislab/anndata/issues/134
 # So as a workaround, we'll use numpy record arrays (which are actually read as plain old structured arrays)
@@ -48,9 +50,16 @@ def blank_entry():
 
 
 def add_history_entry(data, args, description):
+    global _dirty_history
     logging.info(description)
+    _dirty_history = True
     entry = rfn.append_fields(blank_entry(), ('parameters', 'description'), [(repr(vars(args)),), (description,)])
     if 'history' in data.uns_keys():
         data.uns['history'] = rfn.stack_arrays((entry, data.uns['history']), usemask=False, autoconvert=True)
     else:
         data.uns['history'] = entry
+
+
+def has_file_changed():
+    global _dirty_history
+    return _dirty_history

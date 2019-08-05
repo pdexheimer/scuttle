@@ -85,7 +85,8 @@ def global_help():
       10x   -- Both the 10x h5 file (ie, filtered_feature_bc_matrix.h5) and matrix directory (ie,
                filtered_feature_bc_matrix/) are supported
 
-    If the input format is h5ad, scuttle by default will save the updated data back to the same file.  For all other
+    If the input format is h5ad, scuttle by default will save the updated data back to the same file.  If there are no
+    changes to the file (for example, only 'scuttle describe' was run), no output will be written.  For all other
     input formats, or to save a new file, specify the appropriate filename using --output/-o.  Output formats are the
     same as input formats, except that writing 10x files is not supported.  H5ad files are compressed by default, this
     can be disabled using --no-compress.
