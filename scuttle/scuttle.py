@@ -19,9 +19,9 @@
 import logging.config
 import sys
 
+from scuttle import history
 from scuttle.commands import CommandParser, add_subcommands_to_parser
-
-from .readwrite import ScuttleIO
+from scuttle.readwrite import ScuttleIO
 
 logConfig = {
     'version': 1,
@@ -56,6 +56,7 @@ def main():
     scuttle_io = ScuttleIO()
     ScuttleIO.add_options_to_parser(parser)
     parser.add_global_option('--procs', '-p', destvar='procs', default=-1, type=int)
+    parser.add_global_option('--version', destvar='version', action='store_true')
     add_subcommands_to_parser(parser)
 
     if len(sys.argv) == 1:
@@ -74,6 +75,11 @@ def main():
         for c in command_list:
             c.execute()
         return
+
+    if global_args.version:
+        boilerplate = history.blank_entry()
+        print(f"Scuttle v{boilerplate['version'][0]}")
+        exit(0)
 
     scuttle_io.validate_args(global_args)
     scuttle_io.process_arguments(global_args)
