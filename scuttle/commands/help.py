@@ -59,6 +59,7 @@ def global_help():
       --no-write                          Disables writing of output - any changes to the file will be discarded
       --no-compress                       [h5ad file format only] Disables file compression on output
       --procs NUM, -p NUM                 The number of processors to use.  Only certain analyses can take advantage.
+      --version                           Print Scuttle's version and quit
 
     Commands:
       annotate                            Annotate the cells or genes with external data

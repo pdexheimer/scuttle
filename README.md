@@ -17,10 +17,12 @@ Option | Description
 --no-write | Disables writing of output - any changes to the file will be discarded
 --no-compress | [h5ad file format only] Disables file compression on output
 --procs NUM, -p NUM | The number of processors to use.  Only certain analyses will take advantage of these.
+--version | Prints Scuttle's version and exits
 
 Command | Description
 --------|------------
 annotate | Annotate the cells or genes with external data
+filterempty | Identify (and optionally remove) barcodes that don't look like cells
 select | Select cells or genes to keep (discarding the others)
 describe | Describe the data
 help | Print this help.  Use "help &lt;command>" to get detailed help for that command
