@@ -15,7 +15,6 @@ repos:
   hooks:
   - id: isort
     args:
-    - --project=commands
     - --balanced
     - --check-only
     - --virtual-env=env

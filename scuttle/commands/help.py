@@ -24,11 +24,12 @@ import textwrap
 def add_to_parser(parser):
     parser.help.add_verb('annotate')
     parser.help.add_verb('describe')
+    parser.help.add_verb('filterempty')
     parser.help.add_verb('select')
     parser.help.set_executor(process)
 
 
-def process(args):
+def process(args, **kwargs):
     if args.subcommand is None:
         help_text = global_help()
     elif args.subcommand == 'annotate':
@@ -37,6 +38,8 @@ def process(args):
         help_text = describe_help()
     elif args.subcommand == 'select':
         help_text = select_help()
+    elif args.subcommand == 'filterempty':
+        help_text = filter_help()
     print(help_text)
 
 
@@ -55,9 +58,11 @@ def global_help():
       --output-format <h5ad, loom>        In what format should the output be written?
       --no-write                          Disables writing of output - any changes to the file will be discarded
       --no-compress                       [h5ad file format only] Disables file compression on output
+      --procs NUM, -p NUM                 The number of processors to use.  Only certain analyses can take advantage.
 
     Commands:
       annotate                            Annotate the cells or genes with external data
+      filterempty                         Identify (and optionally remove) barcodes that don't look like cells
       select                              Select cells or genes to keep (discarding the others)
       describe                            Describe the data
       help                                Print this help.  Use "help <command>" to get detailed help for that command
@@ -115,7 +120,6 @@ def annotate_help():
       --bc30 FILE            A tab-separated file containing barcode ids and sequences of the 30bp barcodes
       --id-suffix            This value will be appended to all cell barcodes in the --fastqs, in order to
                              match the data
-      --procs NUM, -p NUM    The number of processors to use during error-correction of Cellecta barcodes
     """)
 
 
@@ -151,4 +155,35 @@ def select_help():
       select genes 'num_cells < 10'
       select cells 'num_genes > 500 or is_doublet == False'
 
+    """)
+
+
+def filter_help():
+    return textwrap.dedent("""\
+    scuttle filterempty - Identify (and optionally remove) barcodes that don't look like cells
+
+    Usage:
+      scuttle -i FILE filterempty [emptydrops,classic] <options>
+
+    emptydrops Options:
+      --fdr FDR                 Remove cells with an emptyDrops FDR above this amount
+                                (default: None, no filter)
+      --cellranger              Emulate (as closely as possible) CellRanger's parameters
+      --ambient-cutoff THRESH   Cells with THRESH UMIs or less are used to estimate the ambient
+                                RNA distribution (ie, what empty droplets look like) (default: 100)
+      --retain-cutoff THRESH    Cells with at least THRESH UMIs will be called cells, regardless
+                                of the emptyDrops result (adjusted p-value will be set to 0)
+                                (default: None, auto-calculated by finding knee in UMI rank plot)
+      --iters ITERS             How many iterations of Monte Carlo p-value estimation? (default: 10000)
+      --expect-cells CELLS      Only used when --cellranger is set - number of expected cells (default: 3000)
+
+    classic Options:
+      --expect-cells CELLS      The number of expected cells in the experiment (default: 3000)
+      --keep-all, -k            If set, all barcodes will be retained, even if they are called empty
+      --upper-quant QUANTILE    The position within --expect-cells that is evaluated to determine the
+                                calling threshold (default: 0.99)
+      --lower-prop PROPORTION   The calling threshold will be at PROPORTION times the UMI count of the
+                                barcode selected with --expect-cells and --upper-quant (default: 0.1)
+
+    If neither emptydrops or classic is specified, emptydrops will be used.
     """)

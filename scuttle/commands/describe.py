@@ -31,14 +31,14 @@ def add_to_parser(parser):
     describe_cmd.set_executor(process)
 
 
-def process(args, data):
-    if not hasattr(args, 'subcommand'):
+def process(args, data, **kwargs):
+    if args.subcommand == 'history':
+        _show_history(data, args.verbose)
+    else:
         if args.verbose:
             _full_summary(data)
         else:
             _brief_summary(data)
-    else:
-        _show_history(data, args.verbose)
 
 
 def _show_history(data, verbose):

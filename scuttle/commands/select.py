@@ -33,7 +33,7 @@ def add_to_parser(parser):
     select_cmd.set_executor(process)
 
 
-def process(args, data):
+def process(args, data, **kwargs):
     if args.subcommand == 'cells':
         tree = ast.parse(args.expression, mode='eval')
         cell_subset = EvaluateFilter(data, 'cell').visit(tree)

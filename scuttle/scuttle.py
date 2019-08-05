@@ -47,9 +47,15 @@ logConfig = {
 def main():
     logging.config.dictConfig(logConfig)
 
+    # RPy2 uses the warnings module, and complains about POSIXct objects not specifying a timezone
+    if not sys.warnoptions:
+        import warnings
+        warnings.simplefilter('ignore')
+
     parser = CommandParser()
     scuttle_io = ScuttleIO()
     ScuttleIO.add_options_to_parser(parser)
+    parser.add_global_option('--procs', '-p', destvar='procs', default=-1, type=int)
     add_subcommands_to_parser(parser)
 
     if len(sys.argv) == 1:
@@ -73,7 +79,7 @@ def main():
     scuttle_io.process_arguments(global_args)
     data = scuttle_io.load_data()
     for c in command_list:
-        c.execute(data)
+        c.execute(data, n_procs=global_args.procs)
     scuttle_io.save_data(data)
 
 

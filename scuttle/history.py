@@ -20,6 +20,7 @@ Manages and writes history information to the h5ad
 
 import datetime
 import getpass
+import logging
 import platform
 
 import numpy as np
@@ -47,6 +48,7 @@ def blank_entry():
 
 
 def add_history_entry(data, args, description):
+    logging.info(description)
     entry = rfn.append_fields(blank_entry(), ('parameters', 'description'), [(repr(vars(args)),), (description,)])
     if 'history' in data.uns_keys():
         data.uns['history'] = rfn.stack_arrays((entry, data.uns['history']), usemask=False, autoconvert=True)

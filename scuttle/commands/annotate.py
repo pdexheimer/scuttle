@@ -38,7 +38,6 @@ def add_to_parser(parser):
     cellecta_cmd.add_option('--bc14', destvar='bc14')
     cellecta_cmd.add_option('--bc30', destvar='bc30')
     cellecta_cmd.add_option('--id-suffix', destvar='id_suffix', default='')
-    cellecta_cmd.add_option('--procs', '-p', destvar='procs', default=-1, type=int)
     annot_cmd.set_validator(validate_args)
     annot_cmd.set_executor(process)
 
@@ -73,9 +72,9 @@ def validate_args(args):
         exit(1)
 
 
-def process(args, data):
+def process(args, data, **kwargs):
     if args.subcommand == 'cellecta':
-        assign_tags.assign_tags(data, args.fastqs, args.bc14, args.bc30, args.id_suffix, args.procs)
+        assign_tags.assign_tags(data, args.fastqs, args.bc14, args.bc30, args.id_suffix, kwargs['n_procs'])
         history.add_history_entry(data, args,
                                   f'Processed Cellecta tags from FASTQs {os.path.abspath(args.fastqs[0])}'
                                   f' and {os.path.abspath(args.fastq[1])}')

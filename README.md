@@ -16,6 +16,7 @@ Option | Description
 --output-format &lt;h5ad, loom> | In what format should the output be written?
 --no-write | Disables writing of output - any changes to the file will be discarded
 --no-compress | [h5ad file format only] Disables file compression on output
+--procs NUM, -p NUM | The number of processors to use.  Only certain analyses will take advantage of these.
 
 Command | Description
 --------|------------
@@ -66,7 +67,28 @@ cellecta | Process cell barcodes using the Cellecta viral tags, and assign clone
 --bc14 FILE | A tab-separated file containing barcode ids and sequences of the 14bp barcodes
 --bc30 FILE | A tab-separated file containing barcode ids and sequences of the 30bp barcodes
 --id-suffix | This value will be appended to all cell barcodes in the --fastqs, in order to match the data
---procs NUM, -p NUM | The number of processors to use during error-correction of Cellecta barcodes
+
+### `filterempty`
+
+Usage: `scuttle -i FILE filterempty [emptydrops,classic] <options>`
+
+If neither emptydrops or classic is specified, emptydrops will be used.
+
+`emptydrops`&nbsp;Option | Description
+--------------------|------------
+--fdr FDR | Remove cells with an emptyDrops FDR above this amount (default: None, no filter)
+--cellranger | Emulate (as closely as possible) CellRanger's parameters
+--ambient-cutoff THRESH | Cells with THRESH UMIs or less are used to estimate the ambient RNA distribution (ie, what empty droplets look like) (default: 100)
+--retain-cutoff THRESH | Cells with at least THRESH UMIs will be called cells, regardless of the emptyDrops result (adjusted p-value will be set to 0) (default: None, auto-calculated by finding knee in UMI rank plot)
+--iters ITERS | How many iterations of Monte Carlo p-value estimation? (default: 10000)
+--expect-cells CELLS | Only used when --cellranger is set - number of expected cells (default: 3000)
+
+`classic`&nbsp;Option | Description
+----------------------|------------
+--expect-cells CELLS | The number of expected cells in the experiment (default: 3000)
+--keep-all, -k | If set, all barcodes will be retained, even if they are called empty
+--upper-quant QUANTILE | The position within --expect-cells that is evaluated to determine the calling threshold (default: 0.99)
+--lower-prop PROPORTION | The calling threshold will be at PROPORTION times the UMI count of the barcode selected with --expect-cells and --upper-quant (default: 0.1)
 
 ### `select`
 
@@ -93,3 +115,4 @@ Option | Description
 `describe` prints a summary of the data/annotations contained in FILE to standard output.  Without `--verbose`, only basic dimensions and names of annotations are displayed.  With `--verbose`, a summary of the annotation values is also produced.
 
 `describe history` prints scuttle's history of operations that have been performed on the file.  Once again, adding `--verbose` will include more information
+
