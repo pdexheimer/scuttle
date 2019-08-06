@@ -61,19 +61,29 @@ class ScuttleIO:
             self.compress_output = args.compress
 
     def load_data(self):
+        logging.info(f'Loading {self.input_filename} ({self.input_format} format)')
         load = self._get_loader(self.input_format)
         data = load(self.input_filename)
         if self.input_format != 'h5ad':
             description = (f'Imported {self.input_format} data from {os.path.abspath(self.input_filename)}'
                            f' ({data.n_obs} cells x {data.n_vars} genes)')
             history.add_history_entry(data, self.args, description)
+        logging.info(f'Loaded {data.n_obs} cells and {data.n_vars} genes')
         return data
 
     def save_data(self, data):
         if not self.write_output:
             return
+        logging.info(f'Saving {data.n_obs} cells and {data.n_vars} genes to {self.output_filename} '
+                     f'({self.output_format} format)')
+        if self.output_format != 'h5ad':
+            logging.warning('Exporting to a non-H5ad format will result in information loss! '
+                            'Specifically, analysis provenance and metadata will be discarded')
         write = self._get_writer(self.output_format, self.compress_output)
         write(data, self.output_filename)
+
+    def canonical_filename(self):
+        return self.output_filename if self.write_output else self.input_filename
 
     def _get_loader(self, input_format):
         if input_format == 'h5ad':

@@ -60,6 +60,12 @@ def add_history_entry(data, args, description):
         data.uns['history'] = entry
 
 
+def set_parameter(data, algorithm, key, value):
+    if algorithm not in data.uns_keys():
+        data.uns[algorithm] = {}
+    data.uns[algorithm][key] = value
+
+
 def has_file_changed():
     global _dirty_history
     return _dirty_history
