@@ -54,7 +54,7 @@ class DropletUtils(ScuttlR):
             if not use_dirichlet:
                 dirichlet_alpha = ro.r('1/0')[0]  # Infinity!  I can't find a way to get Inf in rpy2
             raw_result = self.droplet_utils.emptyDrops(data.X.T, lower=lower, niters=niters, retain=retain,
-                                                       alpha=dirichlet_alpha)
+                                                       alpha=dirichlet_alpha, **{'test.ambient': False})
             # raw_result is a DataFrame from the S4Vectors package, not a data.frame from base R
             pandas_result = ro.conversion.rpy2py(base.as_data_frame(raw_result))
             metadata = s4v.metadata(raw_result)
@@ -66,3 +66,26 @@ class DropletUtils(ScuttlR):
                                                          lower_prop=prop)
             result = ro.conversion.rpy2py(raw_result)
         return result
+
+    def barcode_ranks(self, data, lower=100):
+        with ro.conversion.localconverter(self.converter):
+            base = rpackages.importr('base')
+            s4v = rpackages.importr('S4Vectors')
+            raw_result = self.droplet_utils.barcodeRanks(data.X.T, lower=lower)
+            # raw_result is a DataFrame from the S4Vectors package, not a data.frame from base R
+            pandas_result = ro.conversion.rpy2py(base.as_data_frame(raw_result))
+            metadata = s4v.metadata(raw_result)
+        return pandas_result, metadata
+
+    def test_ambient_pval(self, data, lower=100, use_dirichlet=True, dirichlet_alpha=None):
+        with ro.conversion.localconverter(self.converter):
+            base = rpackages.importr('base')
+            if not use_dirichlet:
+                dirichlet_alpha = ro.r('1/0')[0]
+            elif dirichlet_alpha is not None:
+                dirichlet_alpha = float(dirichlet_alpha)
+            raw_result = self.droplet_utils.testEmptyDrops(data.X.T, lower=lower, alpha=dirichlet_alpha,
+                                                           test_ambient=True)
+            pandas_result = ro.conversion.rpy2py(base.as_data_frame(raw_result))
+            pandas_result = pandas_result.query('0 < Total <= @lower')
+        return pandas_result['PValue']
