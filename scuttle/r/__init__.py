@@ -137,6 +137,7 @@ class ScuttlR:
         utils = rpackages.importr('utils')
         if not self.is_mirror_set():
             utils.chooseCRANmirror(ind=1)
+        robjects.r['options'](install_packages_compile_from_source='always')
         logging.info(f'Installing {package_name}')
         utils.install_packages(package_name, quiet=True, Ncpus=self.ncpus)
 
