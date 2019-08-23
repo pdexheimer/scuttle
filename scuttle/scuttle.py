@@ -19,22 +19,45 @@
 import logging.config
 import sys
 
+import colorama
+
 from scuttle import history
 from scuttle.commands import CommandParser, add_subcommands_to_parser
 from scuttle.readwrite import ScuttleIO
+
+
+class ColorizingFilter(logging.Filter):
+    def filter(self, record):
+        record.color = self._logColors[record.levelname]
+        return True
+
+    _logColors = {
+        'CRITICAL': colorama.Fore.RED,
+        'ERROR': colorama.Fore.RED,
+        'WARNING': colorama.Fore.YELLOW,
+        'INFO': colorama.Fore.GREEN,
+        'DEBUG': colorama.Fore.WHITE
+    }
+
 
 logConfig = {
     'version': 1,
     'formatters': {
         'default': {
-            'format': '[%(levelname)s %(asctime)s] %(message)s',
+            'format': '[%(color)s%(levelname)s' + colorama.Fore.RESET + ' %(asctime)s] %(message)s',
             'datefmt': '%H:%M:%S %Y-%m-%d'
+        }
+    },
+    'filters': {
+        'colorize': {
+            '()': ColorizingFilter
         }
     },
     'handlers': {
         'default': {
             'class': 'logging.StreamHandler',
-            'formatter': 'default'
+            'formatter': 'default',
+            'filters': ['colorize']
         }
     },
     'root': {
@@ -45,6 +68,7 @@ logConfig = {
 
 
 def main():
+    colorama.init()
     logging.config.dictConfig(logConfig)
 
     # RPy2 uses the warnings module, and complains about POSIXct objects not specifying a timezone

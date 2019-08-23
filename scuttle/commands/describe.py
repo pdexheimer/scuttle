@@ -20,6 +20,7 @@ Summarizes the annotations attached to the h5ad
 
 import numpy as np
 import pandas as pd
+from colorama import Fore, Style
 from scipy.sparse import issparse
 
 
@@ -48,50 +49,54 @@ def _show_history(data, verbose):
     for entry in data.uns['history']:
         if verbose:
             print(f"[{entry['timestamp']}]")
-            print(f"    {entry['description']}")
+            print(f"    {Fore.CYAN}{entry['description']}{Fore.RESET}")
             print(f"    Run by {entry['user']}@{entry['hostname']} ({entry['operating_system']})")
             print(f"    scuttle v{entry['version']} (Python {entry['python']}), parameters: {entry['parameters']}")
         else:
-            print(f"[{entry['timestamp']}] {entry['description']}")
+            print(f"[{entry['timestamp']}] {Fore.CYAN}{entry['description']}{Fore.RESET}")
 
 
 def _brief_summary(data):
-    print(f'Number of cells: {data.n_obs}')
-    print('Cell annotations:')
-    for x in data.obs_keys(): print(f'  {x}')
-    print('Multi-dimensional per-cell data:')
-    for x in data.obsm_keys(): print(f'  {x}')
+    print(f'Number of cells: {Fore.CYAN}{Style.BRIGHT}{data.n_obs}{Style.RESET_ALL}')
+    print('Cell annotations')
+    for x in data.obs_keys(): print(f'  {Fore.CYAN}{x}{Style.RESET_ALL}')
+    print('Multi-dimensional per-cell data')
+    for x in data.obsm_keys(): print(f'  {Fore.CYAN}{x}{Style.RESET_ALL}')
 
-    print(f'Number of genes: {data.n_vars}')
-    print('Gene annotations:')
-    for x in data.var_keys(): print(f'  {x}')
-    print('Multi-dimensional per-gene data:')
-    for x in data.varm_keys(): print(f'  {x}')
+    print()
+    print(f'Number of genes: {Fore.CYAN}{Style.BRIGHT}{data.n_vars}{Style.RESET_ALL}')
+    print('Gene annotations')
+    for x in data.var_keys(): print(f'  {Fore.CYAN}{x}{Style.RESET_ALL}')
+    print('Multi-dimensional per-gene data')
+    for x in data.varm_keys(): print(f'  {Fore.CYAN}{x}{Style.RESET_ALL}')
 
-    print('Extra layers:')
-    for x in data.layers.keys(): print(f'  {x}')
+    print()
+    print('Extra layers')
+    for x in data.layers.keys(): print(f'  {Fore.CYAN}{x}{Style.RESET_ALL}')
 
 
 def _full_summary(data):
-    print(f'Main expression matrix: {data.n_obs} cells by {data.n_vars} genes [{data.X.dtype}]', end='')
+    print(f'Main expression matrix: {Fore.CYAN}{Style.BRIGHT}{data.n_obs}{Style.RESET_ALL}'
+          f' cells by {Fore.CYAN}{Style.BRIGHT}{data.n_vars}{Style.RESET_ALL} genes'
+          f' [{data.X.dtype}]', end='')
     print(' [sparse]' if issparse(data.X) else '')
     for x in data.layers.keys(): print(f'  (Layer) {_summarize(x, data.layers[x])}')
     print()
-    print('Cell annotations')
+    print(f'{Style.BRIGHT}Cell annotations{Style.RESET_ALL}')
     print(_summarize_index(data.obs_names))
     for x in data.obs_keys(): print(_summarize(x, data.obs[x]))
     print()
-    print('Multi-dimensional per-cell data')
+    print(f'{Style.BRIGHT}Multi-dimensional per-cell data{Style.RESET_ALL}')
     for x in data.obsm_keys(): print(_summarize(x, data.obsm[x]))
     print()
-    print('Gene annotations')
+    print(f'{Style.BRIGHT}Gene annotations{Style.RESET_ALL}')
     print(_summarize_index(data.var_names))
     for x in data.var_keys(): print(_summarize(x, data.var[x]))
     print()
-    print('Multi-dimensional per-gene data')
+    print(f'{Style.BRIGHT}Multi-dimensional per-gene data{Style.RESET_ALL}')
     for x in data.varm_keys(): print(_summarize(x, data.varm[x]))
     print()
-    print('Unstructured data')
+    print(f'{Style.BRIGHT}Unstructured data{Style.RESET_ALL}')
     for x in data.uns_keys():
         if x != 'history':
             print(_summarize(x, data.uns[x]))
@@ -122,7 +127,7 @@ def _summarize_numpy(name, collection):
 
 def _summarize_pandas_categorical(name, collection):
     summary = collection.value_counts()
-    result = f"""{collection.name} [{collection.dtype}]: {collection.count():d} non-null values
+    result = f"""{Fore.CYAN}{collection.name}{Fore.RESET} [{collection.dtype}]: {collection.count():d} non-null values
   {len(summary):d} distinct values, most frequent:"""
     for i in range(min(5, len(summary))):
         result += f'\n    {summary.index[i]}: {summary.iloc[i]:g}'
@@ -131,11 +136,11 @@ def _summarize_pandas_categorical(name, collection):
 
 def _summarize_pandas_numerical(name, collection):
     summary = collection.describe()
-    return f"""{collection.name} [{collection.dtype}]: {summary['count']:.0f} non-null values
+    return f"""{Fore.CYAN}{collection.name}{Fore.RESET} [{collection.dtype}]: {summary['count']:.0f} non-null values
   Range: {summary['min']:g} - {summary['max']:g}
   Mean (SD): {summary['mean']:g} ({summary['std']:g})
   Median (IQR): {summary['50%']:g} ({summary['25%']:g} - {summary['75%']:g})"""
 
 
 def _summarize_python_data(name, data):
-    return name
+    return f'{Fore.CYAN}{name}{Fore.RESET}'
