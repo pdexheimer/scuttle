@@ -15,10 +15,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-readwrite.py - This module is responsible for all import/export from scuttle
+readwrite.py - This module is responsible for all import into scuttle, as well as saving h5ad files
 """
 
-import functools
 import logging
 import os.path
 
@@ -35,7 +34,6 @@ class ScuttleIO:
         self.input_filename = None
         self.output_filename = None
         self.input_format = None
-        self.output_format = None
         self.write_output = True
         self.compress_output = True
         self.args = None
@@ -46,7 +44,6 @@ class ScuttleIO:
         parser.add_global_option('--output', '-o', destvar='output')
         parser.add_global_option('--input-format', destvar='input_format',
                                  choices=['h5ad', '10x', 'loom'], default='h5ad')
-        parser.add_global_option('--output-format', destvar='output_format', choices=['h5ad', 'loom'], default='h5ad')
         parser.add_global_option('--no-write', destvar='write', action='store_false')
         parser.add_global_option('--no-compress', destvar='compress', action='store_false')
 
@@ -57,7 +54,6 @@ class ScuttleIO:
         self.write_output = args.write
         if self.write_output:
             self.output_filename = args.output
-            self.output_format = args.output_format
             self.compress_output = args.compress
 
     def load_data(self):
@@ -74,13 +70,8 @@ class ScuttleIO:
     def save_data(self, data):
         if not self.write_output:
             return
-        logging.info(f'Saving {data.n_obs} cells and {data.n_vars} genes to {self.output_filename} '
-                     f'({self.output_format} format)')
-        if self.output_format != 'h5ad':
-            logging.warning('Exporting to a non-H5ad format will result in information loss! '
-                            'Specifically, analysis provenance and metadata will be discarded')
-        write = self._get_writer(self.output_format, self.compress_output)
-        write(data, self.output_filename)
+        logging.info(f'Saving {data.n_obs} cells and {data.n_vars} genes to {self.output_filename}')
+        data.write(self.output_filename, compression='gzip' if self.compress_output else None)
 
     def canonical_filename(self):
         return self.output_filename if self.write_output else self.input_filename
@@ -94,26 +85,11 @@ class ScuttleIO:
             return ScuttleIO._load_10x
         return lambda filename: None
 
-    def _get_writer(self, output_format, compress):
-        if output_format == 'h5ad':
-            return functools.partial(ScuttleIO._write_h5ad, compression='gzip' if compress else None)
-        elif output_format == 'loom':
-            return ScuttleIO._write_loom
-
-    @staticmethod
-    def _write_h5ad(data, filename, **kwargs):
-        return data.write(filename, **kwargs)
-
-    @staticmethod
-    def _write_loom(data, filename):
-        return data.write_loom(filename)
-
     @staticmethod
     def _load_10x(filename):
-        if filename.endswith('.h5'):
-            return sc.read_10x_h5(filename)
-        else:
-            return sc.read_10x_mtx(filename)
+        data = sc.read_10x_h5(filename) if filename.endswith('.h5') else sc.read_10x_mtx(filename)
+        data.var_names_make_unique()
+        return data
 
     @staticmethod
     def validate_args(args):
@@ -138,10 +114,7 @@ class ScuttleIO:
             if not args.output:
                 logging.critical('Must specify an output filename with any input-format that is not h5ad')
                 exit(1)
-            if args.output_format == 'h5ad':
-                ScuttleIO._validate_h5ad_filename(args.output, 'output')
-            elif args.output_format == 'loom':
-                ScuttleIO._validate_loom_filename(args.output, 'output')
+            ScuttleIO._validate_h5ad_filename(args.output, 'output')
         else:
             if args.output is not None:
                 logging.warning('Output file and --no-write specified.  No output will be written')

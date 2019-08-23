@@ -24,6 +24,7 @@ import textwrap
 def add_to_parser(parser):
     parser.help.add_verb('annotate')
     parser.help.add_verb('describe')
+    parser.help.add_verb('export')
     parser.help.add_verb('filterempty')
     parser.help.add_verb('plot')
     parser.help.add_verb('select')
@@ -37,6 +38,8 @@ def process(args, **kwargs):
         help_text = annotate_help()
     elif args.subcommand == 'describe':
         help_text = describe_help()
+    elif args.subcommand == 'export':
+        help_text = export_help()
     elif args.subcommand == 'filterempty':
         help_text = filter_help()
     elif args.subcommand == 'plot':
@@ -58,15 +61,16 @@ def global_help():
       --input-format <h5ad, 10x, loom>    What is the type of file specified with -i? Default: h5ad
       --output FILE, -o FILE              The name of the file to write.  If --input-format is h5ad,
                                           defaults to the input file
-      --output-format <h5ad, loom>        In what format should the output be written?
       --no-write                          Disables writing of output - any changes to the file will be discarded
-      --no-compress                       [h5ad file format only] Disables file compression on output
+      --no-compress                       Disables file compression on output
       --procs NUM, -p NUM                 The number of processors to use.  Only certain analyses can take advantage.
       --version                           Print Scuttle's version and quit
+      --help, -h, -?                      Print this help.  Use "help <command>" to get detailed help for that command
 
     Commands:
       annotate                            Annotate the cells or genes with external data
       describe                            Describe the data
+      export                              Export the data in another format
       filterempty                         Identify (and optionally remove) barcodes that don't look like cells
       plot                                Generate useful figures
       select                              Select cells or genes to keep (discarding the others)
@@ -74,11 +78,11 @@ def global_help():
 
     Multiple commands can be specified, and will be executed in order.  Therefore:
 
-      scuttle -i input.h5ad --no-write select 'num_genes > 200' describe
+      scuttle -i input.h5ad select 'num_genes > 200' describe
 
-    will produce different results than
+    will produce different output than
 
-      scuttle -i input.h5ad --no-write describe select 'num_genes > 200'
+      scuttle -i input.h5ad describe select 'num_genes > 200'
 
     An input file is always required.  Valid input formats are:
       h5ad  -- The native format of scuttle (all data in memory is stored in h5ad).  This is the anndata
@@ -91,9 +95,9 @@ def global_help():
 
     If the input format is h5ad, scuttle by default will save the updated data back to the same file.  If there are no
     changes to the file (for example, only 'scuttle describe' was run), no output will be written.  For all other
-    input formats, or to save a new file, specify the appropriate filename using --output/-o.  Output formats are the
-    same as input formats, except that writing 10x files is not supported.  H5ad files are compressed by default, this
-    can be disabled using --no-compress.
+    input formats, or to save a new file, specify the appropriate filename using --output/-o.  H5ad files are compressed
+    by default, this can be disabled using --no-compress.  In order to save in a different format, see the export
+    subcommand.
     """)
 
 
@@ -142,6 +146,29 @@ def describe_help():
 
     If 'describe history' is given, then scuttle's history of operations on the file will be displayed.
     With just 'describe', the data and annotations in the file are described.
+    """)
+
+
+def export_help():
+    return textwrap.dedent("""\
+    scuttle export - Export the data in a different file format
+
+    Usage:
+      scuttle -i FILE export [--overwrite] {loom,mtx,mex,cells,genes,textmatrix} <filename>
+
+    Options:
+      --overwrite    By default, scuttle will exit instead of writing data if the destination
+                     file exists.  Include --overwrite to overwrite the file instead.
+
+    Formats:
+      loom           The HDF5-based Loom format (http://loompy.org)
+      mtx,mex        These are synonyms for Market Exchange Format, which is one of the ways
+                     CellRanger exports results
+      cells,genes    Dumps all of the cell or gene metadata, as appropriate.  If <filename>
+                     ends with .gz, it will be gzip compressed
+      textmatrix     Dumps the entire expression matrix to a tab-delimited text file.  This
+                     file has the potential to be several gigabytes, depending on the number
+                     of cells.  If <filename> ends with .gz, it will be gzip compressed
     """)
 
 

@@ -17,12 +17,13 @@
 import logging
 import sys
 
-from scuttle.commands import annotate, describe, filterempty, help, plot, select
+from scuttle.commands import annotate, describe, export, filterempty, help, plot, select
 
 
 def add_subcommands_to_parser(parser):
     annotate.add_to_parser(parser)
     describe.add_to_parser(parser)
+    export.add_to_parser(parser)
     select.add_to_parser(parser)
     help.add_to_parser(parser)
     filterempty.add_to_parser(parser)
@@ -93,8 +94,8 @@ class CommandParser:
                 (parsed_args, global_namespace) = parameter.parse(argv, self.global_opts, global_namespace)
                 if parameter == self._help:
                     # If there's a help command, it should be the only command processed
-                    return None, [CommandRun(parsed_args, parameter._execute_verb)]
-                commands.append(CommandRun(parsed_args, parameter._execute_verb))
+                    return None, [CommandRun(parsed_args, parameter._execute_verb, parameter._validate_args)]
+                commands.append(CommandRun(parsed_args, parameter._execute_verb, parameter._validate_args))
             if isinstance(parameter, CommandLineOption):
                 CommandParser._parse_option(parameter, argv, global_namespace)
         return (global_namespace, commands)
@@ -270,12 +271,17 @@ class CommandRun:
     CommandParser.parse()
     """
 
-    def __init__(self, args, runner):
+    def __init__(self, args, runner, validator):
         self.args = args
         self.runner = runner
+        self.validator = validator
 
     def execute(self, *args, **kwargs):
         self.runner(self.args, *args, **kwargs)
+
+    def validate(self):
+        if self.validator:
+            self.validator(self.args)
 
 
 class DuplicateArgumentError(Exception):

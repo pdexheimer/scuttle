@@ -13,16 +13,17 @@ Option | Description
 --input FILE, -i FILE | The name of the file to load
 --input-format &lt;h5ad, 10x, loom> | What is the type of file specified with -i? Default: h5ad
 --output FILE, -o FILE | The name of the file to write.  If --input-format is h5ad defaults to the input file
---output-format &lt;h5ad, loom> | In what format should the output be written?
 --no-write | Disables writing of output - any changes to the file will be discarded
---no-compress | [h5ad file format only] Disables file compression on output
+--no-compress | Disables file compression on output
 --procs NUM, -p NUM | The number of processors to use.  Only certain analyses will take advantage of these.
 --version | Prints Scuttle's version and exits
+--help, -h, -? | Print this help.  Use "help &lt;command>" to get detailed help for that command
 
 Command | Description
 --------|------------
 annotate | Annotate the cells or genes with external data
 describe | Describe the data
+export | Export the data in another format
 filterempty | Identify (and optionally remove) barcodes that don't look like cells
 plot | Generate useful figures
 select | Select cells or genes to keep (discarding the others)
@@ -30,18 +31,18 @@ help | Print this help.  Use "help &lt;command>" to get detailed help for that c
 
 Multiple commands can be specified, and will be executed in order.  Therefore:
 
-`scuttle -i input.h5ad --no-write select 'num_genes > 200' describe`
+`scuttle -i input.h5ad select 'num_genes > 200' describe`
 
-will produce different results than
+will produce different output than
 
-`scuttle -i input.h5ad --no-write describe select 'num_genes > 200'`
+`scuttle -i input.h5ad describe select 'num_genes > 200'`
 
 An input file is always required.  Valid input formats are:
  * **h5ad** - The native format of scuttle (all data in memory is stored in h5ad).  This is the anndata format used by scanpy (https://scanpy.rtfd.io)
  * **loom** - An alternative single-cell format created by the Linnarsson lab (http://loompy.org).  Used by velocyto.  Note that the current best way to use a Seurat object with scuttle is to first export it from Seurat as a loom file.
  * **10x** - Both the 10x h5 file (ie, filtered_feature_bc_matrix.h5) and matrix directory (ie, filtered_feature_bc_matrix/) are supported
 
-If the input format is h5ad, scuttle by default will save the updated data back to the same file.  If there are no changes to the file (for example, only `scuttle describe` was run), no output will be written.   For all other input formats, or to save a new file, specify the appropriate filename using --output/-o.  Output formats are the same as input formats, except that writing 10x files is not supported.  H5ad files are compressed by default, this can be disabled using --no-compress.
+If the input format is h5ad, scuttle by default will save the updated data back to the same file.  If there are no changes to the file (for example, only `scuttle describe` was run), no output will be written.  For all other input formats, or to save a new file, specify the appropriate filename using --output/-o.  H5ad files are compressed by default, this can be disabled using --no-compress.  In order to save in a different format, see the `export` subcommand.
 
 ## Commands
 
@@ -82,6 +83,22 @@ Option | Description
 `describe` prints a summary of the data/annotations contained in FILE to standard output.  Without `--verbose`, only basic dimensions and names of annotations are displayed.  With `--verbose`, a summary of the annotation values is also produced.
 
 `describe history` prints scuttle's history of operations that have been performed on the file.  Once again, adding `--verbose` will include more information
+
+### `export`
+
+Usage: `scuttle -i FILE export [--overwrite] {loom,mtx,mex,cells,genes,textmatrix} <filename>`
+
+Option | Description
+-------|------------
+--overwrite | By default, scuttle will exit instead of writing data if the destination file exists.  Include --overwrite to overwrite the file instead
+
+Format | Description
+-------|------------
+loom | The HDF5-based Loom format (http://loompy.org)
+mtx,mex | These are synonyms for Market Exchange Format, which is one of the ways CellRanger exports results
+cells,genes | Dumps all of the cell or gene metadata, as appropriate.  If &lt;filename> ends with .gz, it will be gzip compressed
+textmatrix | Dumps the entire expression matrix to a tab-delimited text file.  This file has the potential to be several gigabytes, depending on the number of cells.  If &lt;filename> ends with .gz, it will be gzip compressed
+
 
 ### `filterempty`
 
