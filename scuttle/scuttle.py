@@ -16,90 +16,51 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import logging.config
 import sys
 
 import colorama
 
-from scuttle import history
+from scuttle import history, logging
 from scuttle.commands import CommandParser, add_subcommands_to_parser
 from scuttle.readwrite import ScuttleIO
 
 
-class ColorizingFilter(logging.Filter):
-    def filter(self, record):
-        record.color = self._logColors[record.levelname]
-        return True
+def invoke_toplevel_help(parser):
+    class EmptyCommand:
+        def __init__(self):
+            self.subcommand = None
 
-    _logColors = {
-        'CRITICAL': colorama.Fore.RED,
-        'ERROR': colorama.Fore.RED,
-        'WARNING': colorama.Fore.YELLOW,
-        'INFO': colorama.Fore.GREEN,
-        'DEBUG': colorama.Fore.WHITE
-    }
-
-
-logConfig = {
-    'version': 1,
-    'formatters': {
-        'default': {
-            'format': '[%(color)s%(levelname)s' + colorama.Fore.RESET + ' %(asctime)s] %(message)s',
-            'datefmt': '%H:%M:%S %Y-%m-%d'
-        }
-    },
-    'filters': {
-        'colorize': {
-            '()': ColorizingFilter
-        }
-    },
-    'handlers': {
-        'default': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'default',
-            'filters': ['colorize']
-        }
-    },
-    'root': {
-        'level': 'INFO',
-        'handlers': ['default']
-    }
-}
+    parser.help._execute_verb(EmptyCommand())
 
 
 def main():
     colorama.init()
-    logging.config.dictConfig(logConfig)
-
-    # RPy2 uses the warnings module, and complains about POSIXct objects not specifying a timezone
-    if not sys.warnoptions:
-        import warnings
-        warnings.simplefilter('ignore')
+    logging.init()
 
     parser = CommandParser()
     scuttle_io = ScuttleIO()
     ScuttleIO.add_options_to_parser(parser)
     parser.add_global_option('--procs', '-p', destvar='procs', default=-1, type=int)
     parser.add_global_option('--version', destvar='version', action='store_true')
+    parser.add_global_option('--help', '-h', '-?', destvar='help', action='store_true')
     add_subcommands_to_parser(parser)
 
+    # If no arguments were specified, the user must want help.  Don't even bother parsing
     if len(sys.argv) == 1:
-        # An empty command line altogether.  Make a dummy 'arguments' and call help
-        class dummy:
-            def __init__(self):
-                self.subcommand = None
-
-        parser.help._execute_verb(dummy())
+        invoke_toplevel_help(parser)
         return
 
     global_args, command_list = parser.parse()
 
+    # CommandParser returns None for global_args if the help submodule was invoked
+    # In this case, we don't want to validate
     if global_args is None:
-        # Help was explicitly invoked - no need to validate args or load data
         for c in command_list:
             c.execute()
         return
-
+    if global_args.help:
+        invoke_toplevel_help(parser)
+        return
     if global_args.version:
         boilerplate = history.blank_entry()
         print(f"Scuttle v{boilerplate['version'][0]}")
