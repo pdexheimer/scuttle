@@ -70,6 +70,7 @@ def main():
     scuttle_io.process_arguments(global_args)
     data = scuttle_io.load_data()
     for c in command_list:
+        c.validate()
         c.execute(data, n_procs=global_args.procs, scuttle_file=scuttle_io.canonical_filename())
     if history.has_file_changed():
         scuttle_io.save_data(data)
