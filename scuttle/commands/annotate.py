@@ -50,6 +50,7 @@ def _add_options(command):
     command.add_option('--annot-column', destvar='annot_column', default='1')
     command.add_option('--id-suffix', destvar='id_suffix', default='')
     command.add_option('--drop', destvar='drop')
+    command.add_option('--replace', destvar='replace', action='store_true')
 
 
 def validate_args(args):
@@ -57,8 +58,8 @@ def validate_args(args):
         return
     annotations = (args.annot_file is not None,
                    args.annotation is not None)
-    if any(annotations) and not all(annotations):
-        logging.critical(f'{args.target.capitalize()} annotations have only been partially specified'
+    if any(annotations) and not all(annotations) and not args.replace:
+        logging.critical(f'{args.subcommand.capitalize()} annotations have only been partially specified'
                          f' (see --file, --name, --id-column, and --annot-column)')
         exit(1)
     args.annotation = args.annotation.split(',') if args.annotation else ['none']
@@ -83,7 +84,7 @@ def process(args, data, **kwargs):
             description = drop_annotation(data, args.subcommand, args.drop)
         if args.annot_file is not None:
             add_annotation(data, args.subcommand, args.annot_file, args.header, args.annotation,
-                           args.id_column, args.annot_column, args.id_suffix)
+                           args.id_column, args.annot_column, args.replace, args.id_suffix)
             if args.subcommand == 'cells':
                 target = 'cell'
             else:
@@ -93,16 +94,23 @@ def process(args, data, **kwargs):
             history.add_history_entry(data, args, description)
 
 
-def add_annotation(data, target, filename, header_present, annot_name, id_column, annotation_column, id_suffix=''):
+def add_annotation(data, target, filename, header_present, annot_name, id_column,
+                   annotation_column, replace, id_suffix=''):
     header_row = 'infer' if header_present else None
     annot = pd.read_csv(filename, sep='\t', header=header_row, index_col=id_column)
     if id_suffix:
         annot.rename(lambda x: x + id_suffix, inplace=True)
-    for name, col in zip(annot_name, annotation_column):
+    if replace:
         if target == 'cells':
-            data.obs[name] = annot[col]
+            data.obs = annot
         else:
-            data.var[name] = annot[col]
+            data.var = annot
+    else:
+        for name, col in zip(annot_name, annotation_column):
+            if target == 'cells':
+                data.obs[name] = annot[col]
+            else:
+                data.var[name] = annot[col]
 
 
 def drop_annotation(data, target, annotation):

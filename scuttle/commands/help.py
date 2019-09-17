@@ -85,13 +85,21 @@ def global_help():
       scuttle -i input.h5ad describe select 'num_genes > 200'
 
     An input file is always required.  Valid input formats are:
-      h5ad  -- The native format of scuttle (all data in memory is stored in h5ad).  This is the anndata
-               format used by scanpy (https://scanpy.rtfd.io)
-      loom  -- An alternative single-cell format created by the Linnarsson lab (http://loompy.org).  Used
-               by velocyto.  Note that the current best way to use a Seurat object with scuttle is to
-               first export it from Seurat as a loom file.
-      10x   -- Both the 10x h5 file (ie, filtered_feature_bc_matrix.h5) and matrix directory (ie,
-               filtered_feature_bc_matrix/) are supported
+      h5ad           -- The native format of scuttle (all data in memory is stored in h5ad).  This is the anndata
+                        format used by scanpy (https://scanpy.rtfd.io)
+      loom           -- An alternative single-cell format created by the Linnarsson lab (http://loompy.org).  Used
+                        by velocyto.  Note that the current best way to use a Seurat object with scuttle is to
+                        first export it from Seurat as a loom file.
+      10x            -- Both the 10x h5 file (ie, filtered_feature_bc_matrix.h5) and matrix directory (ie,
+                        filtered_feature_bc_matrix/) are supported
+      bustools-count -- Loads the output of the 'bustools count' command (https://bustools.github.io/manual).
+                        The value provided to -i should be the same as that provided to bustools count -o.
+                        That is, you should supply the basename of the actual files
+      mtx            -- Matrix Market Exchange format (https://math.nist.gov/MatrixMarket/formats.html#MMformat).
+                        This format does not include cell/gene names, so each will be numbered instead.  Use the
+                        --replace option in scuttle annotate cells/genes to supply correct names.  You should prefer
+                        the '10x' or 'bustools-count' input formats, as these will automatically load the names
+      mex            -- A synonym for 'mtx'
 
     If the input format is h5ad, scuttle by default will save the updated data back to the same file.  If there are no
     changes to the file (for example, only 'scuttle describe' was run), no output will be written.  For all other
@@ -123,6 +131,9 @@ def annotate_help():
                           Multiple columns can be comma-separated
       --id-suffix SUFFIX  This value will be appended to all cell/gene ids in FILE
       --drop ANNOTATION   The specified annotation will be REMOVED from the data
+      --replace           Instead of adding annotations onto existing ones, all existing annotations will be
+                          dropped and replaced by the new ones.  This include the ids, which means that new data
+                          will be applied without any reordering whatsoever.
 
     Cellecta Options
       --fastqs READ1 READ2   The raw reads of the barcode library
