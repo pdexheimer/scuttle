@@ -21,6 +21,7 @@ readwrite.py - This module is responsible for all import into scuttle, as well a
 import logging
 import os.path
 
+import pandas as pd
 import scanpy as sc
 
 from scuttle import history
@@ -43,7 +44,8 @@ class ScuttleIO:
         parser.add_global_option('--input', '-i', destvar='input')
         parser.add_global_option('--output', '-o', destvar='output')
         parser.add_global_option('--input-format', destvar='input_format',
-                                 choices=['h5ad', '10x', 'loom'], default='h5ad')
+                                 choices=['h5ad', '10x', 'loom', 'mtx', 'mex', 'bustools-count'],
+                                 default='h5ad')
         parser.add_global_option('--no-write', destvar='write', action='store_false')
         parser.add_global_option('--no-compress', destvar='compress', action='store_false')
 
@@ -58,8 +60,7 @@ class ScuttleIO:
 
     def load_data(self):
         logging.info(f'Loading {self.input_filename} ({self.input_format} format)')
-        load = self._get_loader(self.input_format)
-        data = load(self.input_filename)
+        data = self._load()
         if self.input_format != 'h5ad':
             description = (f'Imported {self.input_format} data from {os.path.abspath(self.input_filename)}'
                            f' ({data.n_obs} cells x {data.n_vars} genes)')
@@ -76,19 +77,30 @@ class ScuttleIO:
     def canonical_filename(self):
         return self.output_filename if self.write_output else self.input_filename
 
-    def _get_loader(self, input_format):
-        if input_format == 'h5ad':
-            return sc.read_h5ad
-        elif input_format == 'loom':
-            return sc.read_loom
-        elif input_format == '10x':
-            return ScuttleIO._load_10x
-        return lambda filename: None
+    def _load(self):
+        if self.input_format == 'h5ad':
+            return sc.read_h5ad(self.input_filename)
+        elif self.input_format == 'loom':
+            return sc.read_loom(self.input_filename)
+        elif self.input_format == '10x':
+            return self._load_10x()
+        elif self.input_format == 'mtx' or self.input_format == 'mex':
+            return sc.read_mtx(self.input_filename)
+        elif self.input_format == 'bustools-count':
+            return self._load_bustools_count()
+        return None
 
-    @staticmethod
-    def _load_10x(filename):
-        data = sc.read_10x_h5(filename) if filename.endswith('.h5') else sc.read_10x_mtx(filename)
+    def _load_10x(self):
+        data = sc.read_10x_h5(self.input_filename) if (
+            self.input_filename.endswith('.h5')) else (
+            sc.read_10x_mtx(self.input_filename))
         data.var_names_make_unique()
+        return data
+
+    def _load_bustools_count(self):
+        data = sc.read_mtx(self.input_filename + '.mtx')
+        data.var = pd.read_csv(self.input_filename + '.genes.txt', sep='\t', header=None, index_col=0)
+        data.obs = pd.read_csv(self.input_filename + '.barcodes.txt', sep='\t', header=None, index_col=0)
         return data
 
     @staticmethod
@@ -103,8 +115,10 @@ class ScuttleIO:
             ScuttleIO._validate_10x_filename(args.input, 'input')
         elif args.input_format == 'loom':
             ScuttleIO._validate_loom_filename(args.input, 'input')
+        elif args.input_format == 'bustools-count':
+            ScuttleIO._validate_bustools_filename(args.input)
 
-        if not os.path.exists(args.input):
+        if args.input_format != 'bustools-count' and not os.path.exists(args.input):
             logging.critical(f'Input file {args.input} does not exist.  Aborting')
             exit(1)
 
@@ -139,4 +153,15 @@ class ScuttleIO:
             logging.critical(f"{input_or_output} file '{filename}' does not look like a 10x file."
                              f' It should either be an .h5 file or the directory containing the .mtx file.'
                              f' Change the expected format with --{input_or_output}-format')
+            exit(1)
+
+    @staticmethod
+    def _validate_bustools_filename(basename):
+        if not all([
+            os.path.exists(basename + '.mtx'),
+            os.path.exists(basename + '.genes.txt'),
+            os.path.exists(basename + '.barcodes.txt')
+        ]):
+            logging.critical(f"'{basename}' does not look like the parameter given to 'bustools count -o'."
+                             f' At least one of the mtx, genes.txt, or barcodes.txt files does not exist')
             exit(1)

@@ -11,7 +11,7 @@ Run `python3 setup.py install`.  Note that this will install python packages as 
 Option | Description
 -------|------------
 --input FILE, -i FILE | The name of the file to load
---input-format &lt;h5ad, 10x, loom> | What is the type of file specified with -i? Default: h5ad
+--input-format &lt;h5ad, 10x, loom, bustools-count, mtx, mex> | What is the type of file specified with -i? Default: h5ad
 --output FILE, -o FILE | The name of the file to write.  If --input-format is h5ad defaults to the input file
 --no-write | Disables writing of output - any changes to the file will be discarded
 --no-compress | Disables file compression on output
@@ -41,6 +41,9 @@ An input file is always required.  Valid input formats are:
  * **h5ad** - The native format of scuttle (all data in memory is stored in h5ad).  This is the anndata format used by scanpy (https://scanpy.rtfd.io)
  * **loom** - An alternative single-cell format created by the Linnarsson lab (http://loompy.org).  Used by velocyto.  Note that the current best way to use a Seurat object with scuttle is to first export it from Seurat as a loom file.
  * **10x** - Both the 10x h5 file (ie, filtered_feature_bc_matrix.h5) and matrix directory (ie, filtered_feature_bc_matrix/) are supported
+ * **bustools-count** - Loads the output of the 'bustools count' command (https://bustools.github.io/manual). The value provided to -i should be the same as that provided to bustools count -o. That is, you should supply the basename of the actual files
+ * **mtx**, **mex** - Matrix Market Exchange format (https://math.nist.gov/MatrixMarket/formats.html#MMformat). This format does not include cell/gene names, so each will be numbered instead.  Use the `--replace` option in `scuttle annotate cells/genes` to supply correct names.  You should prefer the `10x` or `bustools-count` input formats, as these will automatically load the names
+
 
 If the input format is h5ad, scuttle by default will save the updated data back to the same file.  If there are no changes to the file (for example, only `scuttle describe` was run), no output will be written.  For all other input formats, or to save a new file, specify the appropriate filename using --output/-o.  H5ad files are compressed by default, this can be disabled using --no-compress.  In order to save in a different format, see the `export` subcommand.
 
@@ -64,6 +67,7 @@ cellecta | Process cell barcodes using the Cellecta viral tags, and assign clone
 --annot-column COL | The column number (starting with 0) in FILE that contains the values to add as annotation. Multiple columns can be comma-separated
 --id-suffix SUFFIX | This value will be appended to all cell/gene ids in FILE
 --drop ANNOTATION | The specified annotation will be REMOVED from the data
+--replace | Instead of adding annotations onto existing ones, all existing annotations will be dropped and replaced by the new ones.  This include the ids, which means that new data will be applied without any reordering whatsoever
 
 `cellecta` Option|Description
 -------|---------
