@@ -2,7 +2,34 @@
 
 ## Installation
 
-Run `python3 setup.py install`.  Note that this will install python packages as dependencies, so do it inside a virtual environment
+Note that scuttle is still very much in the alpha stage, I'm adding new features regularly.  I have not taken the time to load it into PyPI yet.
+
+There are two methods of installation:
+
+### Using pipx
+
+[Pipx](https://pipxproject.github.io/pipx/) is a package manager for python applications.  It will install all of the dependencies into a virtual environment that is encapsulated away from the user, and make the script available for use anywhere.  This is my favorite approach, as you don't need to activate a virtual environment every time you run scuttle.  Be sure to read the complete [installation instructions](https://pipxproject.github.io/pipx/installation/).
+
+```
+$ pip install pipx
+$ pipx ensurepath # Restart the terminal
+$ git clone https://github.com/pdexheimer/scuttle
+$ pipx install -e --spec scuttle/ scuttle
+$ scuttle --version
+```
+
+### Using setuptools
+
+The advantage of this method is that it doesn't require any extra software to be installed.  The disadvantage is that you need to maintain your virtual environment yourself (or worse, don't use a virtual environment.  But that's a bad idea), *and you'll need to activate your virtual environment every time you use scuttle*.  See the documentation for the [venv module](https://docs.python.org/3/library/venv.html) and for [creating virtual environments](https://packaging.python.org/installing/#creating-virtual-environments).
+
+```
+$ git clone https://github.com/pdexheimer/scuttle
+$ cd scuttle
+$ python3 -mvenv env
+$ source env/bin/activate
+$ python setup.py develop  # Or: python setup.py install
+$ scuttle --version
+```
 
 ## Usage
 
