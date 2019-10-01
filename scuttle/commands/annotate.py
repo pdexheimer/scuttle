@@ -64,7 +64,7 @@ def validate_args(args):
         exit(1)
     args.annotation = args.annotation.split(',') if args.annotation else ['none']
     try:
-        args.annot_column = [int(x) for x in args.annot_column.split(',')]
+        args.annot_column = [int(x) - 1 for x in args.annot_column.split(',')]
     except ValueError:
         logging.critical('--annot-column must be (possibly comma-separated) integer(s)')
         exit(1)
@@ -100,6 +100,8 @@ def add_annotation(data, target, filename, header_present, annot_name, id_column
     annot = pd.read_csv(filename, sep='\t', header=header_row, index_col=id_column)
     if id_suffix:
         annot.rename(lambda x: x + id_suffix, inplace=True)
+    logging.debug('Annotations:')
+    logging.debug(annot[:5])
     if replace:
         if target == 'cells':
             data.obs = annot
@@ -108,9 +110,11 @@ def add_annotation(data, target, filename, header_present, annot_name, id_column
     else:
         for name, col in zip(annot_name, annotation_column):
             if target == 'cells':
-                data.obs[name] = annot[col]
+                logging.debug(f'Adding:')
+                logging.debug(annot.iloc[:5, col])
+                data.obs[name] = annot.iloc[:, col]
             else:
-                data.var[name] = annot[col]
+                data.var[name] = annot.iloc[:, col]
 
 
 def drop_annotation(data, target, annotation):
