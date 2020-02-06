@@ -62,7 +62,9 @@ class EvaluateFilter(ast.NodeVisitor):
     def visit_UnaryOp(self, node):
         if isinstance(node.op, ast.Not):
             return np.logical_not(self.visit(node.operand))
-        logging.critical('Unary addition, subtraction, and inversion are not supported')
+        if isinstance(node.op, ast.USub):
+            return -1 * self.visit(node.operand)
+        logging.critical('Unary addition and inversion are not supported')
         sys.exit(1)
 
     def visit_BinaryOp(self, node):
@@ -74,13 +76,13 @@ class EvaluateFilter(ast.NodeVisitor):
             result = np.logical_and(self.visit(node.values[0]), self.visit(node.values[1]))
             if len(node.values) > 2:
                 for _i in range(2, len(node.values)):
-                    result = np.logical_and(result, node.values[2])
+                    result = np.logical_and(result, self.visit(node.values[_i]))
             return result
         elif isinstance(node.op, ast.Or):
             result = np.logical_or(self.visit(node.values[0]), self.visit(node.values[1]))
             if len(node.values) > 2:
                 for _i in range(2, len(node.values)):
-                    result = np.logical_or(result, node.values[2])
+                    result = np.logical_or(result, self.visit(node.values[_i]))
             return result
         return None  # AND and OR are the only possible BoolOps
 
