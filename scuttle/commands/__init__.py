@@ -17,7 +17,7 @@
 import logging
 import sys
 
-from scuttle.commands import annotate, describe, export, filterempty, help, plot, select
+from scuttle.commands import annotate, describe, export, filterempty, help, plot, promote, select
 
 
 def add_subcommands_to_parser(parser):
@@ -28,6 +28,7 @@ def add_subcommands_to_parser(parser):
     help.add_to_parser(parser)
     filterempty.add_to_parser(parser)
     plot.add_to_parser(parser)
+    promote.add_to_parser(parser)
 
 
 class CommandParser:

@@ -41,8 +41,8 @@ class DropletUtils(ScuttlR):
         if not self.is_package_installed('BiocManager'):
             self.install_package('BiocManager')
         bioc_manager = rpackages.importr('BiocManager')
-        logging.info('Installing DEVELOPMENT version of Bioconductor')
-        bioc_manager.install(version='devel', ask=False, quiet=True, Ncpus=self.ncpus)
+        logging.info('Installing version 3.10 of Bioconductor')
+        bioc_manager.install(version='3.10', ask=False, quiet=True, Ncpus=self.ncpus)
         logging.info('Installing DropletUtils')
         bioc_manager.install('DropletUtils', ask=False, quiet=True, Ncpus=self.ncpus)
         self.module_loaded = False

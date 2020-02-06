@@ -35,8 +35,11 @@ def spMatrixToR(x):
     matrix_pkg = rpackages.importr('Matrix')
     coo_matrix = x.tocoo()
     numpy2ri.activate()
-    result = matrix_pkg.sparseMatrix(coo_matrix.row, coo_matrix.col, index1=False,
-                                     x=FloatVector(coo_matrix.data), dims=IntVector(coo_matrix.shape))
+    result = matrix_pkg.sparseMatrix(i=IntVector(coo_matrix.row),
+                                     j=IntVector(coo_matrix.col),
+                                     x=FloatVector(coo_matrix.data),
+                                     dims=IntVector(coo_matrix.shape),
+                                     index1=False)
     numpy2ri.deactivate()
     return result
 
