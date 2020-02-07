@@ -79,7 +79,7 @@ def _save_mex(filename, data):
     _save_cell_names(os.path.join(filename, 'barcodes.tsv.gz'), data)
     _save_cr_genes(os.path.join(filename, 'features.tsv.gz'), data)
     with gzip.open(os.path.join(filename, 'matrix.mtx.gz'), 'wb') as f:
-        scipy.io.mmwrite(f, data.X)
+        scipy.io.mmwrite(f, data.X.T)
 
 
 def _save_cell_names(filename, data):
