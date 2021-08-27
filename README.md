@@ -176,7 +176,16 @@ Plot Types:
 
 Usage: `scuttle -i FILE select {cells,genes} <expression>`
 
-&lt;expression> describes the cells/genes to keep, and is expected to be a comparison involving an annotation that already exists.  It should be quoted to prevent interpretation by the shell.  The annotation being compared must be on the left side of the expression
+&lt;expression> describes the cells/genes to keep, and is expected to be a comparison involving an annotation that already exists.  Annotations can be examined in a file using `scuttle describe`, and can be added with, eg, `scuttle annotate`, `cellxgene prepare`, or `scanpy.pp.calculate_qc_metrics()`. In all expressions, the annotation should be on the left side of the comparison and the constant value it is compared to must be on the right.
+
+The special annotation `gene` allows access to the gene names (typically symbols) in the file. The usual comparison operators (`==`, `!=`, `<`, `<=`, `>`, `>=`) are recognized, as are several special operators:
+
+ * `is` and `is not` compare the annotation to a regular expression, which must be quoted inside the expression. The regular expression must match the entire annotation - that is, it is implicitly anchored to both the beginning and end of the string.
+ * `in` and `not in` take a file with one value per line, and compare the annotation to the values in that file. Filenames should be quoted within the expression.
+
+Comparisons can be grouped together with `and`/`or` and negated with `not`. Parentheses can be used to clarify order of operations.
+
+Care must be taken with quoting.  The entire expression must be quoted to prevent confusion with other scuttle arguments, and constant strings, regular expressions, and filenames must be quoted within the expression.  Use two different types of quotes (single and double) for these two purposes.
 
 Examples:
 
@@ -184,4 +193,8 @@ Examples:
 
 `select genes 'num_cells < 10'`
 
-`select cells 'num_genes > 500 or is_doublet == False'`
+`select cells '(num_genes > 500) or (is_doublet == False)'`
+
+`select genes 'gene_id in "ensembl_ids_of_interest.txt"'`
+
+`select genes 'gene is not "MT-.+"'`

@@ -16,6 +16,7 @@
 
 import ast
 import logging
+import re
 import sys
 
 import numpy as np
@@ -114,10 +115,13 @@ class EvaluateFilter(ast.NodeVisitor):
             metric = self.data.obs[annotation]
             return self.apply_filter(metric, target, op)
         else:
-            if annotation not in self.data.var_keys():
-                logging.critical(f"Annotation '{annotation}' not present in genes")
-                sys.exit(1)
-            metric = self.data.var[annotation]
+            if annotation == 'gene':
+                metric = self.data.var_names.to_series()
+            else:
+                if annotation not in self.data.var_keys():
+                    logging.critical(f"Annotation '{annotation}' not present in genes")
+                    sys.exit(1)
+                metric = self.data.var[annotation]
             return self.apply_filter(metric, target, op)
 
     def apply_filter(self, metric, target, op):
@@ -141,5 +145,18 @@ class EvaluateFilter(ast.NodeVisitor):
             return metric > target
         if isinstance(op, ast.GtE):
             return metric >= target
-        logging.critical('The operators is, is not, in, and in not are not supported')
-        sys.exit(1)
+        if isinstance(op, ast.Is):
+            regex = re.compile(target)
+            return metric.apply(regex.match).notna()
+        if isinstance(op, ast.IsNot):
+            regex = re.compile(target)
+            return metric.apply(regex.match).isna()
+        if isinstance(op, ast.In):
+            targetvalues = pd.read_table(target, squeeze=True, header=None)
+            logging.info(f'Read {targetvalues.size} values from {target}')
+            return metric.isin(targetvalues)
+        if isinstance(op, ast.NotIn):
+            targetvalues = pd.read_table(target, squeeze=True, header=None)
+            logging.info(f'Read {targetvalues.size} values from {target}')
+            return ~metric.isin(targetvalues)
+        return None  # All comparison operators are allowed!

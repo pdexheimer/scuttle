@@ -29,7 +29,6 @@ class DropletUtils(ScuttlR):
     def __init__(self, n_procs):
         super(DropletUtils, self).__init__(3, 6, n_procs=n_procs)
         self.droplet_utils = None
-        self.module_loaded = False
         if not self.is_package_installed('DropletUtils'):
             self.install()
         self.droplet_utils = rpackages.importr('DropletUtils')
@@ -41,11 +40,10 @@ class DropletUtils(ScuttlR):
         if not self.is_package_installed('BiocManager'):
             self.install_package('BiocManager')
         bioc_manager = rpackages.importr('BiocManager')
-        logging.info('Installing version 3.10 of Bioconductor')
-        bioc_manager.install(version='3.10', ask=False, quiet=True, Ncpus=self.ncpus)
+        logging.info('Installing Bioconductor')
+        bioc_manager.install(ask=False, quiet=True, Ncpus=self.ncpus)
         logging.info('Installing DropletUtils')
         bioc_manager.install('DropletUtils', ask=False, quiet=True, Ncpus=self.ncpus)
-        self.module_loaded = False
 
     def emptyDrops(self, data, lower=100, niters=10000, retain=None, use_dirichlet=True, dirichlet_alpha=None):
         with ro.conversion.localconverter(self.converter):
